@@ -1,37 +1,91 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1>Table {{ table.number }}</h1>
-    <p>Status: {{ table.get_status_display }}</p>
+    <h1 class="mb-4">Table {{ table.number }}</h1>
+    <p class="lead">Status: <span class="badge {% if table.status == 'occupied' %}bg-danger{% else %}bg-success{% endif %}">{{ table.get_status_display }}</span></p>
     
-    <h2>Active Orders</h2>
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Summary of All Orders</h2>
+        </div>
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Item</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in active_orders %}
+                        {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.menu_item.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ item.menu_item.price|multiply:item.quantity }}</td>
+                            </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="table-dark">
+                        <td colspan="2"><strong>Total</strong></td>
+                        <td><strong>${{ active_orders|total_of_all_orders }}</strong></td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="mb-4">
+        <a href="{% url 'create_order' table.id %}" class="btn btn-primary me-2">Add New Order</a>
+        {% if table.status == 'occupied' %}
+            <form method="post" action="{% url 'close_table' table.id %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this table? All active orders will be completed.')">Close Table</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <h2 class="mb-3">Individual Orders</h2>
     {% for order in active_orders %}
         <div class="card mb-3">
-            <div class="card-header">
-                Order #{{ order.id }} - {{ order.created_at }}
+            <div class="card-header bg-secondary text-white">
+                Order #{{ order.id }} - {{ order.created_at|date:"F d, Y H:i" }}
             </div>
             <div class="card-body">
-                <ul>
-                {% for item in order.items.all %}
-                    <li>{{ item.menu_item.name }} x {{ item.quantity }}</li>
-                {% endfor %}
-                </ul>
-                <p>Total: ${{ order.get_total }}</p>
-                <a href="{% url 'order_detail' order.id %}" class="btn btn-primary">View Order</a>
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Item</th>
+                            <th>Quantity</th>
+                            <th>Price</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in order.items.all %}
+                            <tr>
+                                <td>{{ item.menu_item.name }}</td>
+                                <td>{{ item.quantity }}</td>
+                                <td>${{ item.menu_item.price|multiply:item.quantity }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot>
+                        <tr class="table-secondary">
+                            <td colspan="2"><strong>Total</strong></td>
+                            <td><strong>${{ order|get_item_total }}</strong></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary btn-sm">View Order Details</a>
             </div>
         </div>
     {% empty %}
-        <p>No active orders.</p>
+        <p class="alert alert-info">No active orders.</p>
     {% endfor %}
-
-    <a href="{% url 'create_order' table.id %}" class="btn btn-primary">Add New Order</a>
-    
-    {% if table.status == 'occupied' %}
-        <form method="post" action="{% url 'close_table' table.id %}" class="d-inline">
-            {% csrf_token %}
-            <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this table? All active orders will be completed.')">Close Table</button>
-        </form>
-    {% endif %}
 </div>
 {% endblock %}

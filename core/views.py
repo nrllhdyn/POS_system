@@ -163,12 +163,21 @@ def create_order(request, table_id):
 
 @login_required
 def close_table(request, table_id):
-    table = get_object_or_404(Table, id=table_id)
-    if request.method == 'POST':
-        table.close_table()
-        messages.success(request, f'Table {table.number} has been closed and all orders completed.')
-        return redirect('floor_list') 
-    return render(request, 'core/close_table_confirmation.html', {'table': table})
+  table = get_object_or_404(Table, id=table_id)
+  restaurant_id = table.floor.restaurant.id  # Masanın bağlı olduğu restoranın ID'sini al
+  
+  if request.method == 'POST':
+      # Masayı kapat
+      table.status = 'available'
+      table.save()
+      
+      # Aktif siparişleri tamamla
+      active_orders = table.orders.exclude(status__in=['paid', 'completed'])
+      for order in active_orders:
+          order.status = 'completed'
+          order.save()
+  
+  return redirect('floor_list', restaurant_id=restaurant_id)
 
 @login_required
 def table_detail(request, table_id):

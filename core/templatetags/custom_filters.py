@@ -1,5 +1,6 @@
 from django import template
 from django.db.models import Sum
+from collections import defaultdict
 
 register = template.Library()
 
@@ -28,3 +29,12 @@ def get_item_total(order):
 @register.filter
 def total_of_all_orders(orders):
   return sum(get_item_total(order) for order in orders)
+
+@register.filter
+def group_order_items(orders):
+  grouped_items = defaultdict(lambda: {'quantity': 0, 'price': 0})
+  for order in orders:
+      for item in order.items.all():
+          grouped_items[item.menu_item.name]['quantity'] += item.quantity
+          grouped_items[item.menu_item.name]['price'] = item.menu_item.price
+  return [{'name': k, 'quantity': v['quantity'], 'price': v['price']} for k, v in grouped_items.items()]

@@ -17,22 +17,22 @@
                         <th>Item</th>
                         <th>Quantity</th>
                         <th>Price</th>
+                        <th>Total</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for order in active_orders %}
-                        {% for item in order.items.all %}
-                            <tr>
-                                <td>{{ item.menu_item.name }}</td>
-                                <td>{{ item.quantity }}</td>
-                                <td>${{ item.menu_item.price|multiply:item.quantity }}</td>
-                            </tr>
-                        {% endfor %}
+                    {% for item in active_orders|group_order_items %}
+                        <tr>
+                            <td>{{ item.name }}</td>
+                            <td>{{ item.quantity }}</td>
+                            <td>${{ item.price }}</td>
+                            <td>${{ item.price|multiply:item.quantity }}</td>
+                        </tr>
                     {% endfor %}
                 </tbody>
                 <tfoot>
                     <tr class="table-dark">
-                        <td colspan="2"><strong>Total</strong></td>
+                        <td colspan="3"><strong>Total</strong></td>
                         <td><strong>${{ active_orders|total_of_all_orders }}</strong></td>
                     </tr>
                 </tfoot>
@@ -63,6 +63,7 @@
                             <th>Item</th>
                             <th>Quantity</th>
                             <th>Price</th>
+                            <th>Total</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -70,13 +71,14 @@
                             <tr>
                                 <td>{{ item.menu_item.name }}</td>
                                 <td>{{ item.quantity }}</td>
+                                <td>${{ item.menu_item.price }}</td>
                                 <td>${{ item.menu_item.price|multiply:item.quantity }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
                     <tfoot>
                         <tr class="table-secondary">
-                            <td colspan="2"><strong>Total</strong></td>
+                            <td colspan="3"><strong>Total</strong></td>
                             <td><strong>${{ order|get_item_total }}</strong></td>
                         </tr>
                     </tfoot>

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Close Table {{ table.number }}</h1>
+    <p>Are you sure you want to close this table? All active orders will be completed.</p>
+    
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Close Table</button>
+        <a href="{% url 'table_detail' table.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

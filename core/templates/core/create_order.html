@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Create Order - Table {{ table.number }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <div class="accordion" id="menuAccordion">
+            {% for category in table.floor.restaurant.categories.all %}
+                <div class="accordion-item">
+                    <h2 class="accordion-header" id="heading{{ category.id }}">
+                        <button class="accordion-button {% if not forloop.first %}collapsed{% endif %}" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ category.id }}" aria-expanded="{% if forloop.first %}true{% else %}false{% endif %}" aria-controls="collapse{{ category.id }}">
+                            {{ category.name }}
+                        </button>
+                    </h2>
+                    <div id="collapse{{ category.id }}" class="accordion-collapse collapse {% if forloop.first %}show{% endif %}" aria-labelledby="heading{{ category.id }}" data-bs-parent="#menuAccordion">
+                        <div class="accordion-body">
+                            {% for item in category.menu_items.all %}
+                                <div class="row mb-2 align-items-center">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="checkbox" name="menu_item_ids" value="{{ item.id }}" id="item_{{ item.id }}">
+                                            <label class="form-check-label" for="item_{{ item.id }}">
+                                                {{ item.name }} - ${{ item.price }}
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="input-group" style="max-width: 150px;">
+                                            <span class="input-group-text">Qty</span>
+                                            <input type="number" name="quantities_{{ item.id }}" value="1" min="1" class="form-control">
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+        <button type="submit" class="btn btn-primary mt-4">Create Order</button>
+    </form>
+</div>
+{% endblock %}

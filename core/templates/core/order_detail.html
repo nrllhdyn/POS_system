@@ -1,0 +1,57 @@
+<!-- core/templates/core/order_detail.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Order Details - {{ order.table.floor.restaurant.name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Order Details</h1>
+    <h2>{{ order.table.floor.restaurant.name }} - {{ order.table.floor.name }}, Table {{ order.table.number }}</h2>
+    
+    <p><strong>Order Status:</strong> {{ order.get_status_display }}</p>
+    <p><strong>Created At:</strong> {{ order.created_at }}</p>
+    <p><strong>Last Updated:</strong> {{ order.updated_at }}</p>
+
+    <h3 class="mt-4">Order Items</h3>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Subtotal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.menu_item.name }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>${{ item.menu_item.price }}</td>
+                    <td>${{ item.get_subtotal }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+        <tfoot>
+            <tr>
+                <th colspan="3">Total</th>
+                <th>${{ order.get_total }}</th>
+            </tr>
+        </tfoot>
+    </table>
+
+    <h3 class="mt-4">Update Order Status</h3>
+    <form method="post" action="{% url 'update_order_status' order.id %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <select name="status" class="form-control">
+                {% for status, display in order.STATUS_CHOICES %}
+                    <option value="{{ status }}" {% if order.status == status %}selected{% endif %}>{{ display }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">Update Status</button>
+    </form>
+</div>
+{% endblock %}

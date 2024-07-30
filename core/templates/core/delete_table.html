@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Delete Table</h1>
+    <p class="lead">Are you sure you want to delete Table {{ table.number }}?</p>
+    <form method="post" class="d-inline">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, delete</button>
+    </form>
+    <a href="{% url 'restaurant_detail' table.floor.restaurant.id %}" class="btn btn-secondary">Cancel</a>
+</div>
+{% endblock %}

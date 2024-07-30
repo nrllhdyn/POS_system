@@ -1,0 +1,26 @@
+<!-- core/templates/core/menu_management.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Menu Management - {{ restaurant.name }}{% endblock %}
+
+{% block content %}
+<h1>Menu Management - {{ restaurant.name }}</h1>
+<a href="{% url 'add_category' restaurant.id %}" class="btn btn-primary mb-3">Add Category</a>
+
+{% for category in categories %}
+    <div class="card mb-3">
+        <div class="card-header">
+            <h2>{{ category.name }}</h2>
+        </div>
+        <div class="card-body">
+            <a href="{% url 'add_menu_item' category.id %}" class="btn btn-primary mb-2">Add Menu Item</a>
+            <ul class="list-group">
+            {% for item in category.menu_items.all %}
+                <li class="list-group-item">{{ item.name }} - ${{ item.price }}</li>
+            {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endfor %}
+{% endblock %}

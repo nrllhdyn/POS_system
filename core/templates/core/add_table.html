@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">Add Table to {{ floor.name }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="mb-3">
+                {{ field.label_tag }}
+                <input type="{% if field.field.widget.input_type %}{{ field.field.widget.input_type }}{% else %}text{% endif %}" class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                {% if field.help_text %}
+                    <small class="form-text text-muted">{{ field.help_text }}</small>
+                {% endif %}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback d-block">
+                        {{ error }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <button type="submit" class="btn btn-primary">Add Table</button>
+    </form>
+</div>
+{% endblock %}

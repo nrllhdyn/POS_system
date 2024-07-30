@@ -1,0 +1,31 @@
+/* core/static/core/css/style.css */
+
+/* Ana içerik için minimum yükseklik ayarı */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    flex: 1;
+}
+
+/* Navbar stilini özelleştirme */
+.navbar {
+    box-shadow: 0 2px 4px rgba(0,0,0,.1);
+}
+
+/* Jumbotron arka plan rengi */
+.jumbotron {
+    background-color: #f8f9fa;
+    padding: 2rem;
+    border-radius: .3rem;
+}
+
+/* Footer stilini özelleştirme */
+footer {
+    background-color: #f8f9fa;
+    padding: 1rem 0;
+    margin-top: auto;
+}

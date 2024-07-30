@@ -1,0 +1,28 @@
+<!-- core/templates/core/restaurant_list.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Restaurants - POS System{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Restaurants</h1>
+    <div class="row">
+        {% for restaurant in restaurants %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ restaurant.name }}</h5>
+                        <p class="card-text">{{ restaurant.address }}</p>
+                        <a href="{% url 'floor_list' restaurant.id %}" class="btn btn-primary">View Floors</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p>No restaurants available.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

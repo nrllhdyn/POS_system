@@ -1,0 +1,16 @@
+<!-- core/templates/core/home.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Home - Restaurant POS{% endblock %}
+
+{% block content %}
+<div class="jumbotron">
+    <h1 class="display-4">Welcome to Restaurant POS</h1>
+    <p class="lead">Manage your restaurant operations efficiently with our POS system.</p>
+    <hr class="my-4">
+    <p>Get started by creating a new order or viewing the menu.</p>
+    <a class="btn btn-primary btn-lg" href="{% url 'create_order' %}" role="button">Create New Order</a>
+    <a class="btn btn-secondary btn-lg" href="{% url 'menu' %}" role="button">View Menu</a>
+</div>
+{% endblock %}

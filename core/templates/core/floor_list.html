@@ -1,0 +1,27 @@
+<!-- core/templates/core/floor_list.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}{{ restaurant.name }} - Floors{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ restaurant.name }} - Floors</h1>
+    <div class="row">
+        {% for floor in floors %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ floor.name }}</h5>
+                        <a href="{% url 'table_list' floor.id %}" class="btn btn-primary">View Tables</a>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <p>No floors available.</p>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+<!-- core/templates/core/menu.html -->
+
+{% extends 'base.html' %}
+
+{% block title %}Menu - Restaurant POS{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Our Menu</h1>
+
+{% for category in categories %}
+    <h2 class="mt-4">{{ category.name }}</h2>
+    <div class="row">
+        {% for item in category.menuitem_set.all %}
+            <div class="col-md-4 mb-3">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title">{{ item.name }}</h5>
+                        <p class="card-text">{{ item.description }}</p>
+                        <p class="card-text"><strong>Price: ${{ item.price }}</strong></p>
+                        <button class="btn btn-primary add-to-order" data-item-id="{{ item.id }}">Add to Order</button>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% empty %}
+    <p>No menu items available.</p>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Sipariş ekleme butonlarına tıklama olayı ekliyoruz
+    document.querySelectorAll('.add-to-order').forEach(button => {
+        button.addEventListener('click', function() {
+            const itemId = this.getAttribute('data-item-id');
+            console.log(`Item ${itemId} added to order`);
+            // Burada AJAX ile sipariş ekleme işlemi yapılabilir
+        });
+    });
+</script>
+{% endblock %}

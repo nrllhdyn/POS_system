@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1 class="mb-4">{{ restaurant.name }}</h1>
+    <p class="lead">{{ restaurant.address }}</p>
+
+    <h2 class="mt-5 mb-3">Floors and Tables</h2>
+    <a href="{% url 'add_floor' restaurant.id %}" class="btn btn-primary mb-3">Add Floor</a>
+
+    {% for floor in floors %}
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h3 class="mb-0">{{ floor.name }}</h3>
+                <div>
+                    <a href="{% url 'edit_floor' floor.id %}" class="btn btn-sm btn-secondary me-2">Edit</a>
+                    <a href="{% url 'delete_floor' floor.id %}" class="btn btn-sm btn-danger">Delete</a>
+                </div>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'add_table' floor.id %}" class="btn btn-success mb-3">Add Table</a>
+                <ul class="list-group">
+                {% for table in floor.tables.all %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        Table {{ table.number }} (Capacity: {{ table.capacity }})
+                        <div>
+                            <a href="{% url 'edit_table' table.id %}" class="btn btn-sm btn-secondary me-2">Edit</a>
+                            <a href="{% url 'delete_table' table.id %}" class="btn btn-sm btn-danger">Delete</a>
+                        </div>
+                    </li>
+                {% empty %}
+                    <li class="list-group-item">No tables yet.</li>
+                {% endfor %}
+                </ul>
+            </div>
+        </div>
+    {% empty %}
+        <p class="alert alert-info">No floors yet.</p>
+    {% endfor %}
+</div>
+{% endblock %}

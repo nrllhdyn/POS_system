@@ -21,6 +21,7 @@
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Subtotal</th>
+                <th>Delete Item</th>
             </tr>
         </thead>
         <tbody>
@@ -30,6 +31,7 @@
                     <td>{{ item.quantity }}</td>
                     <td>${{ item.menu_item.price }}</td>
                     <td>${{ item.get_subtotal }}</td>
+                    <td><a href="{% url 'delete_order_item' item.id %}" class="btn btn-sm btn-warning">Delete</a></td>
                 </tr>
             {% endfor %}
         </tbody>

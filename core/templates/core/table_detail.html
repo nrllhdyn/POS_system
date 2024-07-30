@@ -43,6 +43,7 @@
     <div class="mb-4">
         <a href="{% url 'create_order' table.id %}" class="btn btn-primary me-2">Add New Order</a>
         {% if table.status == 'occupied' %}
+            <a href="{% url 'transfer_table' table.id %}" class="btn btn-warning me-2">Transfer Table</a>
             <form method="post" action="{% url 'close_table' table.id %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this table? All active orders will be completed.')">Close Table</button>

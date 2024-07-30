@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Delete Order Item Quantity</h2>
+    <p>Current quantity of {{ order_item.menu_item.name }}: {{ order_item.quantity }}</p>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="decrease_amount">Amount to decrease:</label>
+            <input type="number" name="decrease_amount" id="decrease_amount" value="1" min="1" max="{{ order_item.quantity }}" class="form-control" required>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Decrease Quantity</button>
+        <a href="{% url 'order_detail' order_item.order.id %}" class="btn btn-secondary mt-3">Cancel</a>
+    </form>
+</div>
+{% endblock %}

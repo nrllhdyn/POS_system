@@ -3,6 +3,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Floor, Restaurant, Category, MenuItem, Order , OrderItem, Table
 from django.contrib.auth.decorators import login_required
 from .forms import FloorForm, TableForm
+from django.db.models import F
 # Create your views here.
 def home(request):
     contex = {
@@ -187,9 +188,72 @@ def table_detail(request, table_id):
 
 
 @login_required
+def transfer_table(request, from_table_id):
+    from_table = get_object_or_404(Table, id=from_table_id)
+    
+    if request.method == 'POST':
+        to_table_id = request.POST.get('to_table_id')
+        to_table = get_object_or_404(Table, id=to_table_id)
+        
+        if to_table.status != 'available':
+            messages.error(request, 'The destination table is not available.')
+            return redirect('table_detail', table_id=from_table_id)
+        
+        # Transfer orders
+        active_orders = from_table.orders.exclude(status__in=['paid', 'completed'])
+        for order in active_orders:
+            order.table = to_table
+            order.save()
+        
+        # Update table statuses
+        from_table.status = 'available'
+        from_table.save()
+        to_table.status = 'occupied'
+        to_table.save()
+        
+        messages.success(request, f'Orders transferred from Table {from_table.number} to Table {to_table.number}.')
+        return redirect('table_detail', table_id=to_table_id)
+    
+    # If GET request, show form to select destination table
+    available_tables = Table.objects.filter(status='available').exclude(id=from_table_id)
+    return render(request, 'core/transfer_table.html', {'from_table': from_table, 'available_tables': available_tables})
+
+@login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, table__floor__restaurant__owner=request.user)
     return render(request, 'core/order_detail.html', {'order': order})
+
+@login_required
+def delete_order_item(request, order_item_id):
+    order_item = get_object_or_404(OrderItem, id=order_item_id)
+    order = order_item.order
+
+    if request.method == 'POST':
+        decrease_amount = int(request.POST.get('decrease_amount', 0))
+        if 0 < decrease_amount <= order_item.quantity:
+            # Decrease quantity
+            order_item.quantity = F('quantity') - decrease_amount
+            order_item.save()
+            order_item.refresh_from_db()  # Refresh to get the updated quantity
+
+            if order_item.quantity == 0:
+                # Remove item if quantity becomes zero
+                order_item.delete()
+                messages.success(request, f'Removed {order_item.menu_item.name} from the order.')
+            else:
+                messages.success(request, f'Decreased quantity of {order_item.menu_item.name} by {decrease_amount}.')
+        else:
+            messages.error(request, 'Invalid decrease amount.')
+
+        # Check if order is now empty
+        if order.items.count() == 0:
+            order.delete()
+            messages.info(request, 'Order was empty and has been deleted.')
+            return redirect('table_detail', table_id=order.table.id)
+
+        return redirect('order_detail', order_id=order.id)
+
+    return render(request, 'core/delete_order_item.html', {'order_item': order_item})
 
 @login_required
 def update_order_status(request, order_id):

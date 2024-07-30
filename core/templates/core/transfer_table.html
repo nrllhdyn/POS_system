@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Transfer Orders from Table {{ from_table.number }}</h2>
+    <form method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="to_table_id">Select Destination Table:</label>
+            <select name="to_table_id" id="to_table_id" class="form-control" required>
+                {% for table in available_tables %}
+                    <option value="{{ table.id }}">Table {{ table.number }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary mt-3">Transfer Orders</button>
+    </form>
+</div>
+{% endblock %}

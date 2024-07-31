@@ -1,9 +1,10 @@
 from django.contrib import messages
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Floor, Restaurant, Category, MenuItem, Order , OrderItem, Table
+from .models import Floor, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Table
 from django.contrib.auth.decorators import login_required
 from .forms import FloorForm, TableForm
 from django.db.models import F
+from decimal import Decimal
 # Create your views here.
 def home(request):
     contex = {
@@ -147,7 +148,7 @@ def create_order(request, table_id):
         menu_item_ids = request.POST.getlist('menu_item_ids')
         
         if menu_item_ids:
-            order = Order.objects.create(table=table, status='pending')
+            order = Order.objects.create(table=table, status='active')
             
             for item_id in menu_item_ids:
                 quantity = int(request.POST.get(f'quantities_{item_id}', 1))
@@ -173,7 +174,7 @@ def close_table(request, table_id):
       table.save()
       
       # Aktif siparişleri tamamla
-      active_orders = table.orders.exclude(status__in=['paid', 'completed'])
+      active_orders = table.orders.filter(status='active')
       for order in active_orders:
           order.status = 'completed'
           order.save()
@@ -183,7 +184,7 @@ def close_table(request, table_id):
 @login_required
 def table_detail(request, table_id):
     table = get_object_or_404(Table, id=table_id)
-    active_orders = table.orders.exclude(status__in=['paid', 'completed']).order_by('-created_at')
+    active_orders = table.orders.filter(status='active').order_by('-created_at')
     return render(request, 'core/table_detail.html', {'table': table, 'active_orders': active_orders})
 
 
@@ -200,7 +201,7 @@ def transfer_table(request, from_table_id):
             return redirect('table_detail', table_id=from_table_id)
         
         # Transfer orders
-        active_orders = from_table.orders.exclude(status__in=['paid', 'completed'])
+        active_orders = table.orders.filter(status='active')
         for order in active_orders:
             order.table = to_table
             order.save()
@@ -269,3 +270,54 @@ def update_order_status(request, order_id):
             messages.error(request, 'Invalid status')
     
     return redirect('order_detail', order_id=order.id)
+
+
+@login_required
+def payment_view(request, table_id):
+    table = get_object_or_404(Table, id=table_id)
+    orders = table.orders.filter(status='active')
+    
+    if not orders:
+        messages.warning(request, 'No active orders for this table.')
+        return redirect('table_detail', table_id=table.id)
+
+    if request.method == 'POST':
+        discount = Decimal(request.POST.get('discount', '0'))
+        cash_amount = Decimal(request.POST.get('cash_amount', '0'))
+        credit_card_amount = Decimal(request.POST.get('credit_card_amount', '0'))
+
+        for order in orders:
+            order.discount = discount / len(orders)  # Distribute discount equally among orders
+            order.save()
+
+            if cash_amount > 0:
+                Payment.objects.create(order=order, amount=min(cash_amount, order.get_remaining_amount()), payment_type='cash')
+                cash_amount = max(Decimal('0'), cash_amount - order.get_remaining_amount())
+
+            if credit_card_amount > 0:
+                Payment.objects.create(order=order, amount=min(credit_card_amount, order.get_remaining_amount()), payment_type='credit_card')
+                credit_card_amount = max(Decimal('0'), credit_card_amount - order.get_remaining_amount())
+
+            if order.get_remaining_amount() <= 0:
+                order.status = 'completed'
+                order.save()
+
+        if all(order.status == 'completed' for order in orders):
+            table.status = 'available'
+            table.save()
+            messages.success(request, 'All payments completed. Table is now available.')
+            return redirect('table_detail', table_id=table.id)
+        else:
+            messages.warning(request, 'Payments recorded but the full amount has not been paid yet.')
+
+    total_amount = sum(order.get_total() for order in orders)
+    remaining_amount = sum(order.get_remaining_amount() for order in orders)
+
+    context = {
+        'table': table,
+        'orders': orders,
+        'total_amount': total_amount,
+        'remaining_amount': remaining_amount,
+    }
+    return render(request, 'core/payment.html', context)
+

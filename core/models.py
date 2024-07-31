@@ -59,24 +59,29 @@ class MenuItem(models.Model):
 
 class Order(models.Model):
     STATUS_CHOICES = [
-        ('pending', 'Pending'),
-        ('preparing', 'Preparing'),
-        ('ready', 'Ready'),
-        ('delivered', 'Delivered'),
-        ('paid', 'Paid'),
+        ('active', 'Active'),
         ('completed', 'Completed'),
+        ('cancelled', 'Cancelled'),
     ]
     table = models.ForeignKey('Table', on_delete=models.SET_NULL, null=True, related_name='orders')
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='active')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     completed_at = models.DateTimeField(null=True, blank=True)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     def __str__(self):
         return f"{self.table.floor.restaurant.name} - Order {self.id} - Table {self.table.number}"
 
     def get_total(self):
         return sum(item.get_subtotal() for item in self.items.all())
+    
+    def get_total_with_discount(self):
+        return self.get_total() - self.discount
+
+    def get_remaining_amount(self):
+        total_paid = sum(payment.amount for payment in self.payments.all())
+        return self.get_total_with_discount() - total_paid
 
     def complete(self):
         self.status = 'completed'
@@ -93,3 +98,18 @@ class OrderItem(models.Model):
 
     def __str__(self):
         return f"{self.order} - {self.menu_item.name}"
+    
+
+class Payment(models.Model):
+    PAYMENT_TYPES = [
+        ('cash', 'Cash'),
+        ('credit_card', 'Credit Card'),
+    ]
+    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='payments')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default='credit_card')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.payment_type} payment of {self.amount} for Order {self.order.id}"
+

@@ -27,6 +27,7 @@ urlpatterns = [
     path('table/<int:table_id>/', views.table_detail, name='table_detail'),
     path('table/<int:table_id>/close/', views.close_table, name='close_table'),
     path('table/<int:from_table_id>/transfer/', views.transfer_table, name='transfer_table'),
+    path('table/<int:table_id>/payment/', views.payment_view, name='payment_view'),
     path('order/<int:order_id>/', views.order_detail, name='order_detail'),
     path('order/<int:order_id>/update-status/', views.update_order_status, name='update_order_status'),
     path('order-item/<int:order_item_id>/edit/', views.delete_order_item, name='delete_order_item'),

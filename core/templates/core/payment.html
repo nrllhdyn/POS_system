@@ -10,15 +10,15 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="discount">Discount Amount:</label>
-            <input type="number" step="0.01" name="discount" id="discount" value="0" class="form-control">
+            <input type="number" step="0.01" name="discount" id="discount" value="0" min="0" max="{{ total_amount }}" class="form-control">
         </div>
         <div class="form-group">
             <label for="cash_amount">Cash Amount:</label>
-            <input type="number" step="0.01" name="cash_amount" id="cash_amount" value="0" class="form-control">
+            <input type="number" step="0.01" name="cash_amount" id="cash_amount" value="0" min="0" class="form-control">
         </div>
         <div class="form-group">
             <label for="credit_card_amount">Credit Card Amount:</label>
-            <input type="number" step="0.01" name="credit_card_amount" id="credit_card_amount" value="0" class="form-control">
+            <input type="number" step="0.01" name="credit_card_amount" id="credit_card_amount" value="0" min="0" class="form-control">
         </div>
         <button type="submit" class="btn btn-primary mt-3">Process Payment</button>
     </form>
@@ -39,8 +39,6 @@
                 <p>Remaining: ${{ order.get_remaining_amount|floatformat:2 }}</p>
             </div>
         </div>
-    {% empty %}
-        <p>No active orders for this table.</p>
     {% endfor %}
 </div>
 {% endblock %}

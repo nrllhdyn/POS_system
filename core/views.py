@@ -285,30 +285,53 @@ def payment_view(request, table_id):
         discount = Decimal(request.POST.get('discount', '0'))
         cash_amount = Decimal(request.POST.get('cash_amount', '0'))
         credit_card_amount = Decimal(request.POST.get('credit_card_amount', '0'))
+        total_payment = cash_amount + credit_card_amount
 
+        # Apply discount
+        total_order_amount = sum(order.get_total() for order in orders)
+        if discount > total_order_amount:
+            messages.error(request, 'Discount cannot be greater than the total order amount.')
+            return redirect('payment_view', table_id=table.id)
+
+        discount_per_order = discount / len(orders)
         for order in orders:
-            order.discount = discount / len(orders)  # Distribute discount equally among orders
+            order.discount += discount_per_order
             order.save()
 
-            if cash_amount > 0:
-                Payment.objects.create(order=order, amount=min(cash_amount, order.get_remaining_amount()), payment_type='cash')
-                cash_amount = max(Decimal('0'), cash_amount - order.get_remaining_amount())
-
-            if credit_card_amount > 0:
-                Payment.objects.create(order=order, amount=min(credit_card_amount, order.get_remaining_amount()), payment_type='credit_card')
-                credit_card_amount = max(Decimal('0'), credit_card_amount - order.get_remaining_amount())
-
-            if order.get_remaining_amount() <= 0:
+        # Process payments
+        remaining_payment = total_payment
+        for order in orders:
+            order_remaining = order.get_remaining_amount()
+            if remaining_payment >= order_remaining:
+                if cash_amount > 0:
+                    Payment.objects.create(order=order, amount=min(cash_amount, order_remaining), payment_type='cash')
+                    cash_amount -= min(cash_amount, order_remaining)
+                if credit_card_amount > 0:
+                    Payment.objects.create(order=order, amount=min(credit_card_amount, order_remaining), payment_type='credit_card')
+                    credit_card_amount -= min(credit_card_amount, order_remaining)
                 order.status = 'completed'
-                order.save()
+                remaining_payment -= order_remaining
+            else:
+                if cash_amount > 0:
+                    Payment.objects.create(order=order, amount=min(cash_amount, remaining_payment), payment_type='cash')
+                    cash_amount -= min(cash_amount, remaining_payment)
+                if credit_card_amount > 0:
+                    Payment.objects.create(order=order, amount=min(credit_card_amount, remaining_payment), payment_type='credit_card')
+                    credit_card_amount -= min(credit_card_amount, remaining_payment)
+                remaining_payment = 0
+            order.save()
+
+            if remaining_payment <= 0:
+                break
 
         if all(order.status == 'completed' for order in orders):
             table.status = 'available'
             table.save()
             messages.success(request, 'All payments completed. Table is now available.')
-            return redirect('table_detail', table_id=table.id)
         else:
-            messages.warning(request, 'Payments recorded but the full amount has not been paid yet.')
+            messages.success(request, f'Partial payment of ${total_payment} processed successfully.')
+
+        return redirect('table_detail', table_id=table.id)
 
     total_amount = sum(order.get_total() for order in orders)
     remaining_amount = sum(order.get_remaining_amount() for order in orders)

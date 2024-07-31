@@ -1,9 +1,13 @@
+import json
 from django.contrib import messages
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Floor, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Table
+from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Table
 from django.contrib.auth.decorators import login_required
-from .forms import FloorForm, TableForm
+from django.views.decorators.http import require_POST
+from .forms import FloorForm, IncomeExpenseForm, TableForm
 from django.db.models import F
+from django.db import transaction
 from decimal import Decimal
 # Create your views here.
 def home(request):
@@ -282,59 +286,45 @@ def payment_view(request, table_id):
     table = get_object_or_404(Table, id=table_id)
     orders = table.orders.filter(status='active')
     
-    if not orders:
-        messages.warning(request, 'No active orders for this table.')
-        return redirect('table_detail', table_id=table.id)
-
     if request.method == 'POST':
         discount = Decimal(request.POST.get('discount', '0'))
         cash_amount = Decimal(request.POST.get('cash_amount', '0'))
         credit_card_amount = Decimal(request.POST.get('credit_card_amount', '0'))
-        total_payment = cash_amount + credit_card_amount
+        
+        with transaction.atomic():
+            # İndirim uygula
+            if discount > 0:
+                discount_per_order = discount / len(orders)
+                for order in orders:
+                    order.discount += discount_per_order
+                    order.save()
 
-        # Apply discount
-        total_order_amount = sum(order.get_total() for order in orders)
-        if discount > total_order_amount:
-            messages.error(request, 'Discount cannot be greater than the total order amount.')
-            return redirect('payment_view', table_id=table.id)
-
-        discount_per_order = discount / len(orders)
-        for order in orders:
-            order.discount += discount_per_order
-            order.save()
-
-        # Process payments
-        remaining_payment = total_payment
-        for order in orders:
-            order_remaining = order.get_remaining_amount()
-            if remaining_payment >= order_remaining:
+            # Ödemeleri işle
+            for order in orders:
+                order_remaining = order.get_remaining_amount()
+                
                 if cash_amount > 0:
-                    Payment.objects.create(order=order, amount=min(cash_amount, order_remaining), payment_type='cash')
-                    cash_amount -= min(cash_amount, order_remaining)
-                if credit_card_amount > 0:
-                    Payment.objects.create(order=order, amount=min(credit_card_amount, order_remaining), payment_type='credit_card')
-                    credit_card_amount -= min(credit_card_amount, order_remaining)
-                order.status = 'completed'
-                remaining_payment -= order_remaining
+                    payment_amount = min(cash_amount, order_remaining)
+                    Payment.objects.create(order=order, amount=payment_amount, payment_type='cash')
+                    cash_amount -= payment_amount
+                    order_remaining -= payment_amount
+
+                if credit_card_amount > 0 and order_remaining > 0:
+                    payment_amount = min(credit_card_amount, order_remaining)
+                    Payment.objects.create(order=order, amount=payment_amount, payment_type='credit_card')
+                    credit_card_amount -= payment_amount
+                    order_remaining -= payment_amount
+
+                if order_remaining <= 0:
+                    order.status = 'completed'
+                    order.save()
+
+            if all(order.status == 'completed' for order in orders):
+                table.status = 'available'
+                table.save()
+                messages.success(request, 'All payments completed. Table is now available.')
             else:
-                if cash_amount > 0:
-                    Payment.objects.create(order=order, amount=min(cash_amount, remaining_payment), payment_type='cash')
-                    cash_amount -= min(cash_amount, remaining_payment)
-                if credit_card_amount > 0:
-                    Payment.objects.create(order=order, amount=min(credit_card_amount, remaining_payment), payment_type='credit_card')
-                    credit_card_amount -= min(credit_card_amount, remaining_payment)
-                remaining_payment = 0
-            order.save()
-
-            if remaining_payment <= 0:
-                break
-
-        if all(order.status == 'completed' for order in orders):
-            table.status = 'available'
-            table.save()
-            messages.success(request, 'All payments completed. Table is now available.')
-        else:
-            messages.success(request, f'Partial payment of ${total_payment} processed successfully.')
+                messages.success(request, 'Partial payment processed successfully.')
 
         return redirect('table_detail', table_id=table.id)
 
@@ -349,3 +339,45 @@ def payment_view(request, table_id):
     }
     return render(request, 'core/payment.html', context)
 
+
+@login_required
+def income_expense_list(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    income_expenses = IncomeExpense.objects.filter(restaurant=restaurant).order_by('-date')
+    return render(request, 'core/income_expense_list.html', {'restaurant': restaurant, 'income_expenses': income_expenses})
+
+@login_required
+def add_income_expense(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    if request.method == 'POST':
+        form = IncomeExpenseForm(request.POST)
+        if form.is_valid():
+            income_expense = form.save(commit=False)
+            income_expense.restaurant = restaurant
+            income_expense.created_by = request.user
+            income_expense.save()
+            messages.success(request, 'Income/Expense added successfully.')
+            return redirect('income_expense_list', restaurant_id=restaurant.id)
+    else:
+        form = IncomeExpenseForm()
+    return render(request, 'core/add_income_expense.html', {'form': form, 'restaurant': restaurant})
+
+
+@login_required
+@require_POST
+def add_income_expense_category(request):
+    data = json.loads(request.body)
+    name = data.get('name')
+    is_income = data.get('is_income')
+
+    if not name:
+        return JsonResponse({'success': False, 'error': 'Category name is required.'})
+
+    category = IncomeExpenseCategory.objects.create(name=name, is_income=is_income)
+    return JsonResponse({
+        'success': True,
+        'category': {
+            'id': category.id,
+            'name': category.name
+        }
+    })

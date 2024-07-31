@@ -10,7 +10,7 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="discount">Discount Amount:</label>
-            <input type="number" step="0.01" name="discount" id="discount" value="0" min="0" max="{{ total_amount }}" class="form-control">
+            <input type="number" step="0.01" name="discount" id="discount" value="0" min="0" max="{{ remaining_amount }}" class="form-control">
         </div>
         <div class="form-group">
             <label for="cash_amount">Cash Amount:</label>

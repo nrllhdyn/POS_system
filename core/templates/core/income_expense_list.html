@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1>Income and Expenses - {{ restaurant.name }}</h1>
+    <a href="{% url 'add_income_expense' restaurant.id %}" class="btn btn-primary mb-3">Add Income/Expense</a>
+    
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Date</th>
+                <th>Type</th>
+                <th>Category</th>
+                <th>Amount</th>
+                <th>Description</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in income_expenses %}
+            <tr>
+                <td>{{ item.date }}</td>
+                <td>{{ item.get_type_display }}</td>
+                <td>{{ item.category.name }}</td>
+                <td>{{ item.amount }}</td>
+                <td>{{ item.description }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No income or expenses recorded yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

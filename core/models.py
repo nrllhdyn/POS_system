@@ -100,6 +100,34 @@ class OrderItem(models.Model):
         return f"{self.order} - {self.menu_item.name}"
     
 
+class IncomeExpenseCategory(models.Model):
+    name = models.CharField(max_length=100)
+    is_income = models.BooleanField(default=True)
+
+    def __str__(self):
+        return self.name
+
+class IncomeExpense(models.Model):
+    TYPES = (
+        ('income', 'Income'),
+        ('expense', 'Expense'),
+    )
+    
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='income_expenses')
+    category = models.ForeignKey(IncomeExpenseCategory, on_delete=models.SET_NULL, null=True)
+    type = models.CharField(max_length=10, choices=TYPES)
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    description = models.TextField(blank=True)
+    date = models.DateField()
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.get_type_display()} - {self.amount} - {self.date}"
+
+
+
+
 class Payment(models.Model):
     PAYMENT_TYPES = [
         ('cash', 'Cash'),
@@ -109,7 +137,26 @@ class Payment(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2)
     payment_type = models.CharField(max_length=20, choices=PAYMENT_TYPES, default='credit_card')
     created_at = models.DateTimeField(auto_now_add=True)
+    income = models.OneToOneField(IncomeExpense, on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return f"{self.payment_type} payment of {self.amount} for Order {self.order.id}"
+    
+    def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+        if is_new and not self.income:
+            category_name = f'Table {self.get_payment_type_display()}'
+            income = IncomeExpense.objects.create(
+                restaurant=self.order.table.floor.restaurant,
+                category=IncomeExpenseCategory.objects.get_or_create(name=category_name, is_income=True)[0],
+                type='income',
+                amount=self.amount,
+                description=f"Table {self.get_payment_type_display()} Payment for Order #{self.order.id}",
+                date=self.created_at.date(),
+                created_by=None
+            )
+            self.income = income
+            super().save(update_fields=['income'])
+
 

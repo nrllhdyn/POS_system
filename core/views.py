@@ -136,9 +136,14 @@ def floor_list(request, restaurant_id):
 
 @login_required
 def table_list(request, floor_id):
-    floor = get_object_or_404(Floor, id=floor_id, restaurant__owner=request.user)
-    tables = floor.tables.all()
-    return render(request, 'core/table_list.html', {'floor': floor, 'tables': tables})
+    floor = get_object_or_404(Floor, id=floor_id)
+    tables = floor.tables.order_by('number')
+    
+    context = {
+        'floor': floor,
+        'tables': tables,
+    }
+    return render(request, 'core/table_list.html', context)
 
 @login_required
 def create_order(request, table_id):

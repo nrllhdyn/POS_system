@@ -1,31 +1,22 @@
-<!-- core/templates/core/table_list.html -->
-
 {% extends 'base.html' %}
-
-{% block title %}{{ floor.restaurant.name }} - {{ floor.name }}{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h1 class="mb-4">{{ floor.restaurant.name }} - {{ floor.name }}</h1>
-    <div class="row">
+    <h1 class="mb3">{{ floor.name }} - {{ restaurant.name }}</h1>
+    
+    <div class="row mt-4">
         {% for table in tables %}
-            <div class="col-md-2 mb-3">
-                <div class="card {% if table.status == 'occupied' %}bg-danger text-white{% else %}bg-success text-white{% endif %}">
+            <div class="col-md-4 mb-4">
+                <div class="card {% if table.status == 'occupied' %}bg-danger{% else %}bg-success{% endif %} text-white">
                     <div class="card-body">
                         <h5 class="card-title">Table {{ table.number }}</h5>
-                        <p class="card-text">Capacity: {{ table.capacity }}</p>
-                        {% if table.status == 'occupied' %}
-                            <a href="{% url 'table_detail' table.id %}" class="btn btn-light">View Table</a>
-                        {% else %}
-                            <a href="{% url 'create_order' table.id %}" class="btn btn-light">New Order</a>
-                        {% endif %}
+                        <p class="card-text">Status: {{ table.get_status_display }}</p>
+                        <a href="{% url 'table_detail' table.id %}" class="btn btn-light">View Details</a>
                     </div>
                 </div>
             </div>
         {% empty %}
-            <div class="col-12">
-                <p>No tables available.</p>
-            </div>
+            <p>No tables available for this floor.</p>
         {% endfor %}
     </div>
 </div>

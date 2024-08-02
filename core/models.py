@@ -126,8 +126,6 @@ class IncomeExpense(models.Model):
         return f"{self.get_type_display()} - {self.amount} - {self.date}"
 
 
-
-
 class Payment(models.Model):
     PAYMENT_TYPES = [
         ('cash', 'Cash'),

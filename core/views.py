@@ -210,7 +210,7 @@ def transfer_table(request, from_table_id):
             return redirect('table_detail', table_id=from_table_id)
         
         # Transfer orders
-        active_orders = table.orders.filter(status='active')
+        active_orders = from_table.orders.filter(status='active')
         for order in active_orders:
             order.table = to_table
             order.save()

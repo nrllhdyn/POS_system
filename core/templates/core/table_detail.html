@@ -2,93 +2,110 @@
 {% load custom_filters %}
 
 {% block content %}
-<div class="container mt-4">
+  <div class="container mt-4">
     <h1 class="mb-4">Table {{ table.number }}</h1>
-    <p class="lead">Status: <span class="badge {% if table.status == 'occupied' %}bg-danger{% else %}bg-success{% endif %}">{{ table.get_status_display }}</span></p>
-    
+    <p class="lead">
+      Status: <span class="badge {% if table.status == 'occupied' %}
+          bg-danger
+        {% else %}
+          bg-success
+        {% endif %}">
+        {{ table.get_status_display }}
+      </span>
+    </p>
+
     <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
-            <h2 class="mb-0">Summary of All Orders</h2>
-        </div>
-        <div class="card-body">
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Item</th>
-                        <th>Quantity</th>
-                        <th>Price</th>
-                        <th>Total</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in active_orders|group_order_items %}
-                        <tr>
-                            <td>{{ item.name }}</td>
-                            <td>{{ item.quantity }}</td>
-                            <td>${{ item.price }}</td>
-                            <td>${{ item.price|multiply:item.quantity }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-                <tfoot>
-                    <tr class="table-dark">
-                        <td colspan="3"><strong>Total</strong></td>
-                        <td><strong>${{ active_orders|total_of_all_orders }}</strong></td>
-                    </tr>
-                </tfoot>
-            </table>
-        </div>
+      <div class="card-header bg-primary text-white">
+        <h2 class="mb-0">Summary of All Orders</h2>
+      </div>
+      <div class="card-body">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Quantity</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in active_orders|group_order_items %}
+              <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ item.price }}</td>
+                <td>${{ item.price|multiply:item.quantity }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="table-dark">
+              <td colspan="3">
+                <strong>Total</strong>
+              </td>
+              <td>
+                <strong>${{ active_orders|total_of_all_orders }}</strong>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
 
     <!-- ... diğer kodlar ... -->
     <div class="mb-4">
-        <a href="{% url 'create_order' table.id %}" class="btn btn-primary me-2">Add New Order</a>
-        {% if table.status == 'occupied' %}
-            <a href="{% url 'transfer_table' table.id %}" class="btn btn-warning me-2">Transfer Table</a>
-            <form method="get" action="{% url 'payment_view' table.id %}" class="d-inline">
-                <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this table? You will be redirected to the payment page.')">Close Table</button>
-            </form>
-        {% endif %}
+      <a href="{% url 'create_order' table.id %}" class="btn btn-primary me-2">Add New Order</a>
+      {% if table.status == 'occupied' %}
+        <a href="{% url 'transfer_table' table.id %}" class="btn btn-warning me-2">Transfer Table</a>
+        <form method="get" action="{% url 'payment_view' table.id %}" class="d-inline">
+          <button type="submit" class="btn btn-danger" onclick="return confirm('Are you sure you want to close this table? You will be redirected to the payment page.')">Close Table</button>
+        </form>
+      {% endif %}
     </div>
 
     <h2 class="mb-3">Individual Orders</h2>
     {% for order in active_orders %}
-        <div class="card mb-3">
-            <div class="card-header bg-secondary text-white">
-                Order #{{ order.id }} - {{ order.created_at|date:"F d, Y H:i" }}
-            </div>
-            <div class="card-body">
-                <table class="table table-sm">
-                    <thead>
-                        <tr>
-                            <th>Item</th>
-                            <th>Quantity</th>
-                            <th>Price</th>
-                            <th>Total</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in order.items.all %}
-                            <tr>
-                                <td>{{ item.menu_item.name }}</td>
-                                <td>{{ item.quantity|sub:item.cancelled_quantity }}</td>
-                                <td>${{ item.menu_item.price }}</td>
-                                <td>${{ item.get_subtotal }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                    <tfoot>
-                        <tr class="table-secondary">
-                            <td colspan="3"><strong>Total</strong></td>
-                            <td><strong>${{ order|get_item_total }}</strong></td>
-                        </tr>
-                    </tfoot>
-                </table>
-                <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary btn-sm">View Order Details</a>
-            </div>
+      <div class="card mb-3">
+        <div class="card-header bg-secondary text-white">Order #{{ order.id }} - {{ order.created_at|date:'F d, Y H:i' }}</div>
+        <div class="card-body">
+          <table class="table table-sm">
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Quantity</th>
+                <th>Price</th>
+                <th>Total</th>
+                <th>Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in order.items.all %}
+                <tr>
+                  <td>{{ item.menu_item.name }}</td>
+                  <td>{{ item.quantity|sub:item.cancelled_quantity }}</td>
+                  <td>${{ item.menu_item.price }}</td>
+                  <td>${{ item.get_subtotal }}</td>
+                  <td>{{ item.notes|default:'-' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+            <tfoot>
+              <tr class="table-secondary">
+                <td colspan="3">
+                  <strong>Total</strong>
+                </td>
+                <td>
+                  <strong>${{ order|get_item_total }}</strong>
+                </td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+          <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-primary btn-sm">View Order Details</a>
         </div>
+      </div>
     {% empty %}
-        <p class="alert alert-info">No active orders.</p>
+      <p class="alert alert-info">No active orders.</p>
     {% endfor %}
-</div>
+  </div>
 {% endblock %}

@@ -161,8 +161,9 @@ def create_order(request, table_id):
             
             for item_id in menu_item_ids:
                 quantity = int(request.POST.get(f'quantities_{item_id}', 1))
+                notes = request.POST.get(f'notes_{item_id}', '')
                 menu_item = MenuItem.objects.get(id=item_id)
-                OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity)
+                OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity, notes=notes)
             
             table.status = 'occupied'
             table.save()

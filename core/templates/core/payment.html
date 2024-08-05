@@ -1,44 +1,84 @@
 {% extends 'base.html' %}
+{% load custom_filters %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2>Payment for Table {{ table.number }}</h2>
-    <h3>Total Amount: ${{ total_amount|floatformat:2 }}</h3>
-    <h3>Remaining Amount: ${{ remaining_amount|floatformat:2 }}</h3>
+    <h1 class="mb-4">Payment for Table {{ table.number }}</h1>
 
-    <form method="post">
-        {% csrf_token %}
-        <div class="form-group">
-            <label for="discount">Discount Amount:</label>
-            <input type="number" step="0.01" name="discount" id="discount" value="0" min="0" max="{{ remaining_amount }}" class="form-control">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h2 class="mb-0">Payment Summary</h2>
         </div>
-        <div class="form-group">
-            <label for="cash_amount">Cash Amount:</label>
-            <input type="number" step="0.01" name="cash_amount" id="cash_amount" value="0" min="0" class="form-control">
+        <div class="card-body">
+            <table class="table">
+                <tr>
+                    <th>Total Amount:</th>
+                    <td>${{ total_amount }}</td>
+                </tr>
+                <tr>
+                    <th>Total Paid:</th>
+                    <td>${{ total_paid }}</td>
+                </tr>
+                <tr class="table-info">
+                    <th>Remaining Balance:</th>
+                    <td>${{ remaining_amount }}</td>
+                </tr>
+            </table>
         </div>
-        <div class="form-group">
-            <label for="credit_card_amount">Credit Card Amount:</label>
-            <input type="number" step="0.01" name="credit_card_amount" id="credit_card_amount" value="0" min="0" class="form-control">
-        </div>
-        <button type="submit" class="btn btn-primary mt-3">Process Payment</button>
-    </form>
+    </div>
 
-    <h3 class="mt-4">Order Details:</h3>
-    {% for order in orders %}
-        <div class="card mb-3">
-            <div class="card-body">
-                <h5 class="card-title">Order #{{ order.id }}</h5>
-                <ul>
-                    {% for item in order.items.all %}
-                        <li>{{ item.menu_item.name }} x {{ item.quantity }} - ${{ item.get_total|floatformat:2 }}</li>
+    <div class="card mb-4">
+        <div class="card-header bg-success text-white">
+            <h2 class="mb-0">Make a Payment</h2>
+        </div>
+        <div class="card-body">
+            <form method="post">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="discount" class="form-label">Discount:</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="discount" name="discount" value="0">
+                </div>
+                <div class="mb-3">
+                    <label for="cash_amount" class="form-label">Cash Amount:</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="cash_amount" name="cash_amount" value="0">
+                </div>
+                <div class="mb-3">
+                    <label for="credit_card_amount" class="form-label">Credit Card Amount:</label>
+                    <input type="number" step="0.01" min="0" class="form-control" id="credit_card_amount" name="credit_card_amount" value="0">
+                </div>
+                <button type="submit" class="btn btn-primary">Process Payment</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card mb-4">
+        <div class="card-header bg-info text-white">
+            <h2 class="mb-0">Payment History</h2>
+        </div>
+        <div class="card-body">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Amount</th>
+                        <th>Method</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in orders %}
+                        {% for payment in order.payments.all %}
+                            <tr>
+                                <td>{{ payment.created_at|date:"F d, Y H:i" }}</td>
+                                <td>${{ payment.amount }}</td>
+                                <td>{{ payment.payment_type|title }}</td>
+                            </tr>
+                        {% endfor %}
                     {% endfor %}
-                </ul>
-                <p>Total: ${{ order.get_total|floatformat:2 }}</p>
-                <p>Discount: ${{ order.discount|floatformat:2 }}</p>
-                <p>Total with Discount: ${{ order.get_total_with_discount|floatformat:2 }}</p>
-                <p>Remaining: ${{ order.get_remaining_amount|floatformat:2 }}</p>
-            </div>
+                </tbody>
+            </table>
         </div>
-    {% endfor %}
+    </div>
+
+    <a href="{% url 'table_detail' table.id %}" class="btn btn-secondary">Back to Table</a>
 </div>
 {% endblock %}

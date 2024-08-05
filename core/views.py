@@ -329,12 +329,14 @@ def payment_view(request, table_id):
         return redirect('table_detail', table_id=table.id)
 
     total_amount = sum(order.get_total() for order in orders)
+    total_paid = sum(order.get_total_paid() for order in orders)
     remaining_amount = sum(order.get_remaining_amount() for order in orders)
 
     context = {
         'table': table,
         'orders': orders,
         'total_amount': total_amount,
+        'total_paid': total_paid,
         'remaining_amount': remaining_amount,
     }
     return render(request, 'core/payment.html', context)

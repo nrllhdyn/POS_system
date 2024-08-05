@@ -78,6 +78,9 @@ class Order(models.Model):
     
     def get_total_with_discount(self):
         return self.get_total() - self.discount
+    
+    def get_total_paid(self):
+        return self.payments.aggregate(total=models.Sum('amount'))['total'] or 0
 
     def get_remaining_amount(self):
         total_paid = sum(payment.amount for payment in self.payments.all())

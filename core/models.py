@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 # Create your models here.
 
 class Restaurant(models.Model):
@@ -37,7 +38,6 @@ class Table(models.Model):
         for order in self.orders.filter(status__in=['pending', 'preparing', 'ready', 'delivered']):
             order.complete()
 
-
 class Category(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='categories')
     name = models.CharField(max_length=100)
@@ -53,9 +53,21 @@ class MenuItem(models.Model):
     name = models.CharField(max_length=100)
     description = models.TextField()
     price = models.DecimalField(max_digits=8, decimal_places=2)
+    track_stock = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.category.restaurant.name} - {self.name}"
+    
+    def get_stock(self, restaurant):
+        stock = self.stocks.filter(restaurant=restaurant).first()
+        return stock.quantity if stock else None
+    
+    def update_stock(self, restaurant, quantity):
+        stock, _ = self.stocks.get_or_create(restaurant=restaurant)
+        stock.quantity -= quantity
+        if stock.quantity < 0:
+            raise ValidationError("Not enough stock available.")
+        stock.save()
 
 class Order(models.Model):
     STATUS_CHOICES = [
@@ -107,7 +119,11 @@ class OrderItem(models.Model):
     def __str__(self):
         return f"{self.order} - {self.menu_item.name}"
     
-
+    def save(self, *args, **kwargs):
+        if self.menu_item.track_stock:
+            self.menu_item.update_stock(self.order.table.floor.restaurant, self.quantity)
+        super().save(*args, **kwargs)
+    
 class IncomeExpenseCategory(models.Model):
     name = models.CharField(max_length=100)
     is_income = models.BooleanField(default=True)
@@ -132,7 +148,6 @@ class IncomeExpense(models.Model):
 
     def __str__(self):
         return f"{self.get_type_display()} - {self.amount} - {self.date}"
-
 
 class Payment(models.Model):
     PAYMENT_TYPES = [
@@ -164,5 +179,21 @@ class Payment(models.Model):
             )
             self.income = income
             super().save(update_fields=['income'])
+
+class Stock(models.Model):
+    restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='stocks')
+    menu_item = models.ForeignKey('MenuItem', on_delete=models.CASCADE, related_name='stocks')
+    quantity = models.PositiveIntegerField(default=0)
+    warning_threshold = models.PositiveIntegerField(default=10)
+
+    class Meta:
+        unique_together = ('restaurant', 'menu_item')
+
+    def __str__(self):
+        return f"{self.menu_item.name} - {self.restaurant.name}"
+
+    def clean(self):
+        if self.warning_threshold > self.quantity:
+            raise ValidationError("Warning threshold cannot be greater than the quantity.")
 
 

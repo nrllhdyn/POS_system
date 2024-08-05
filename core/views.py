@@ -2,13 +2,14 @@ import json
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Table
+from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Stock, Table
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from .forms import FloorForm, IncomeExpenseForm, TableForm
 from django.db.models import F
 from django.db import transaction
 from decimal import Decimal
+from django.core.exceptions import ValidationError
 # Create your views here.
 def home(request):
     contex = {
@@ -152,6 +153,7 @@ def table_list(request, floor_id):
 @login_required
 def create_order(request, table_id):
     table = get_object_or_404(Table, id=table_id)
+    restaurant = table.floor.restaurant
     
     if request.method == 'POST':
         menu_item_ids = request.POST.getlist('menu_item_ids')
@@ -163,7 +165,27 @@ def create_order(request, table_id):
                 quantity = int(request.POST.get(f'quantities_{item_id}', 1))
                 notes = request.POST.get(f'notes_{item_id}', '')
                 menu_item = MenuItem.objects.get(id=item_id)
-                OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity, notes=notes)
+                
+                try:
+                    if menu_item.track_stock:
+                        stock = Stock.objects.get(restaurant=restaurant, menu_item=menu_item)
+                        if stock.quantity < quantity:
+                            raise ValidationError(f"Not enough stock for {menu_item.name}. Available: {stock.quantity}")
+                        
+                        new_stock_level = stock.quantity - quantity
+                        if new_stock_level <= stock.warning_threshold:
+                            messages.warning(request, f"Low stock warning for {menu_item.name}. Current stock: {new_stock_level}")
+                    
+                    order_item = OrderItem.objects.create(order=order, menu_item=menu_item, quantity=quantity, notes=notes)
+                    
+                    if menu_item.track_stock:
+                        stock.quantity = new_stock_level
+                        stock.save()
+                
+                except ValidationError as e:
+                    messages.error(request, str(e))
+                    order.delete()
+                    return redirect('create_order', table_id=table.id)
             
             table.status = 'occupied'
             table.save()
@@ -171,7 +193,11 @@ def create_order(request, table_id):
             messages.success(request, 'Order created successfully.')
             return redirect('table_detail', table_id=table.id)
     
-    return render(request, 'core/create_order.html', {'table': table})
+    menu_items = MenuItem.objects.filter(category__restaurant=restaurant)
+    for item in menu_items:
+        item.current_stock = item.get_stock(restaurant)
+
+    return render(request, 'core/create_order.html', {'table': table, 'menu_items': menu_items})
 
 @login_required
 def close_table(request, table_id):
@@ -411,4 +437,36 @@ def cancel_order_item(request, order_item_id):
     
     return render(request, 'core/cancel_order_item.html', {'order_item': order_item})
 
+@login_required
+def manage_stock(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
+    menu_items = MenuItem.objects.filter(category__restaurant=restaurant)
 
+    if request.method == 'POST':
+        for item in menu_items:
+            quantity = request.POST.get(f'quantity_{item.id}')
+            warning_threshold = request.POST.get(f'warning_threshold_{item.id}')
+            track_stock = request.POST.get(f'track_stock_{item.id}') == 'on'
+
+            if quantity is not None and warning_threshold is not None:
+                stock, created = Stock.objects.get_or_create(restaurant=restaurant, menu_item=item)
+                stock.quantity = int(quantity)
+                stock.warning_threshold = int(warning_threshold)
+                stock.save()
+
+            item.track_stock = track_stock
+            item.save()
+
+        messages.success(request, 'Stock information updated successfully.')
+        return redirect('manage_stock', restaurant_id=restaurant_id)
+
+    for item in menu_items:
+        stock = Stock.objects.filter(restaurant=restaurant, menu_item=item).first()
+        if stock:
+            item.current_stock = stock.quantity
+            item.current_warning_threshold = stock.warning_threshold
+        else:
+            item.current_stock = 0
+            item.current_warning_threshold = 5
+
+    return render(request, 'core/manage_stock.html', {'restaurant': restaurant, 'menu_items': menu_items})

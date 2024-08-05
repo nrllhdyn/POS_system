@@ -7,6 +7,7 @@ urlpatterns = [
     path('restaurant/<int:restaurant_id>/floors/', views.floor_list, name='floor_list'),
     path('restaurant/<int:restaurant_id>/add-floor/', views.add_floor, name='add_floor'),
     path('restaurant/<int:restaurant_id>/menu/', views.menu_management, name='menu_management'),
+    path('restaurant/<int:restaurant_id>/manage-stock/', views.manage_stock, name='manage_stock'),
     path('restaurant/<int:restaurant_id>/income-expenses/', views.income_expense_list, name='income_expense_list'),
     path('restaurant/<int:restaurant_id>/add-income-expense/', views.add_income_expense, name='add_income_expense'),
     path('add-income-expense-category/', views.add_income_expense_category, name='add_income_expense_category'),

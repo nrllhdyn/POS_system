@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">Manage Stock - {{ restaurant.name }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Track Stock</th>
+                    <th>Quantity</th>
+                    <th>Warning Threshold</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in menu_items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>
+                            <input type="checkbox" name="track_stock_{{ item.id }}" {% if item.track_stock %}checked{% endif %}>
+                        </td>
+                        <td>
+                            <input type="number" name="quantity_{{ item.id }}" value="{{ item.current_stock }}" min="0" class="form-control">
+                        </td>
+                        <td>
+                            <input type="number" name="warning_threshold_{{ item.id }}" value="{{ item.current_warning_threshold }}" min="1" class="form-control">
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        <button type="submit" class="btn btn-primary">Update Stock</button>
+    </form>
+</div>
+{% endblock %}

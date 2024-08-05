@@ -1,5 +1,3 @@
-<!-- core/templates/core/order_detail.html -->
-
 {% extends 'base.html' %}
 
 {% block title %}Order Details - {{ order.table.floor.restaurant.name }}{% endblock %}
@@ -21,17 +19,32 @@
                 <th>Quantity</th>
                 <th>Price</th>
                 <th>Subtotal</th>
-                <th>Delete Item</th>
+                <th>Cancelled</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
             {% for item in order.items.all %}
-                <tr>
+                <tr {% if item.is_cancelled %}class="text-muted"{% endif %}>
                     <td>{{ item.menu_item.name }}</td>
                     <td>{{ item.quantity }}</td>
                     <td>${{ item.menu_item.price }}</td>
                     <td>${{ item.get_subtotal }}</td>
-                    <td><a href="{% url 'delete_order_item' item.id %}" class="btn btn-sm btn-warning">Delete</a></td>
+                    <td>
+                        {% if item.cancelled_quantity > 0 %}
+                            {{ item.cancelled_quantity }}
+                            {% if item.cancellation_reason %}
+                                <br><small>({{ item.cancellation_reason }})</small>
+                            {% endif %}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if not item.is_cancelled and item.quantity > item.cancelled_quantity %}
+                            <a href="{% url 'cancel_order_item' item.id %}" class="btn btn-sm btn-warning">Cancel</a>
+                        {% endif %}
+                    </td>
                 </tr>
             {% endfor %}
         </tbody>
@@ -39,6 +52,7 @@
             <tr>
                 <th colspan="3">Total</th>
                 <th>${{ order.get_total }}</th>
+                <th colspan="2"></th>
             </tr>
         </tfoot>
     </table>
@@ -53,7 +67,7 @@
                 {% endfor %}
             </select>
         </div>
-        <button type="submit" class="btn btn-primary">Update Status</button>
+        <button type="submit" class="btn btn-primary mt-2">Update Status</button>
     </form>
 </div>
 {% endblock %}

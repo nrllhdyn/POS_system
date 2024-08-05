@@ -92,9 +92,14 @@ class OrderItem(models.Model):
     order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
     menu_item = models.ForeignKey(MenuItem, on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
+    notes = models.TextField(blank=True, null=True)
+    is_cancelled = models.BooleanField(default=False)
+    cancelled_quantity = models.PositiveIntegerField(default=0)
+    cancellation_reason = models.TextField(blank=True, null=True)
 
+    
     def get_subtotal(self):
-        return self.quantity * self.menu_item.price
+        return (self.quantity - self.cancelled_quantity) * self.menu_item.price
 
     def __str__(self):
         return f"{self.order} - {self.menu_item.name}"

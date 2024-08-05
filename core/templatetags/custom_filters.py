@@ -38,3 +38,10 @@ def group_order_items(orders):
           grouped_items[item.menu_item.name]['quantity'] += item.quantity
           grouped_items[item.menu_item.name]['price'] = item.menu_item.price
   return [{'name': k, 'quantity': v['quantity'], 'price': v['price']} for k, v in grouped_items.items()]
+
+
+@register.filter
+def sub(value, arg):
+    return value - arg
+
+

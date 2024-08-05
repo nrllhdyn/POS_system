@@ -381,3 +381,31 @@ def add_income_expense_category(request):
             'name': category.name
         }
     })
+
+
+@login_required
+def cancel_order_item(request, order_item_id):
+    order_item = get_object_or_404(OrderItem, id=order_item_id)
+    
+    if request.method == 'POST':
+        cancel_quantity = int(request.POST.get('cancel_quantity', 0))
+        cancellation_reason = request.POST.get('cancellation_reason', '')
+        
+        if cancel_quantity <= 0 or cancel_quantity > order_item.quantity - order_item.cancelled_quantity:
+            messages.error(request, 'Invalid cancellation quantity.')
+            return redirect('order_detail', order_id=order_item.order.id)
+        
+        order_item.cancelled_quantity += cancel_quantity
+        order_item.cancellation_reason = cancellation_reason
+        order_item.save()
+        
+        if order_item.cancelled_quantity == order_item.quantity:
+            order_item.is_cancelled = True
+            order_item.save()
+        
+        messages.success(request, f'{cancel_quantity} x {order_item.menu_item.name} has been cancelled.')
+        return redirect('order_detail', order_id=order_item.order.id)
+    
+    return render(request, 'core/cancel_order_item.html', {'order_item': order_item})
+
+

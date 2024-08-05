@@ -24,20 +24,22 @@ def multiply(value, arg):
 
 @register.filter
 def get_item_total(order):
-  return sum(item.quantity * item.menu_item.price for item in order.items.all())
+  return order.get_total()
 
 @register.filter
 def total_of_all_orders(orders):
-  return sum(get_item_total(order) for order in orders)
+  return sum(order.get_total() for order in orders)
 
 @register.filter
 def group_order_items(orders):
-  grouped_items = defaultdict(lambda: {'quantity': 0, 'price': 0})
-  for order in orders:
-      for item in order.items.all():
-          grouped_items[item.menu_item.name]['quantity'] += item.quantity
-          grouped_items[item.menu_item.name]['price'] = item.menu_item.price
-  return [{'name': k, 'quantity': v['quantity'], 'price': v['price']} for k, v in grouped_items.items()]
+    grouped_items = defaultdict(lambda: {'quantity': 0, 'price': 0})
+    for order in orders:
+        for item in order.items.all():
+            active_quantity = item.quantity - item.cancelled_quantity
+            if active_quantity > 0:
+                grouped_items[item.menu_item.name]['quantity'] += active_quantity
+                grouped_items[item.menu_item.name]['price'] = item.menu_item.price
+    return [{'name': k, 'quantity': v['quantity'], 'price': v['price']} for k, v in grouped_items.items()]
 
 
 @register.filter

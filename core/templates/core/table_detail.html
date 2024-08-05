@@ -40,7 +40,7 @@
         </div>
     </div>
 
-
+    <!-- ... diğer kodlar ... -->
     <div class="mb-4">
         <a href="{% url 'create_order' table.id %}" class="btn btn-primary me-2">Add New Order</a>
         {% if table.status == 'occupied' %}
@@ -71,9 +71,9 @@
                         {% for item in order.items.all %}
                             <tr>
                                 <td>{{ item.menu_item.name }}</td>
-                                <td>{{ item.quantity }}</td>
+                                <td>{{ item.quantity|sub:item.cancelled_quantity }}</td>
                                 <td>${{ item.menu_item.price }}</td>
-                                <td>${{ item.menu_item.price|multiply:item.quantity }}</td>
+                                <td>${{ item.get_subtotal }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

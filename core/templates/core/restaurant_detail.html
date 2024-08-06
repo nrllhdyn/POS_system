@@ -5,6 +5,7 @@
     <h1 class="mb-4">{{ restaurant.name }}</h1>
     <p class="lead">{{ restaurant.address }}</p>
     <a href="{% url 'income_expense_list' restaurant.id %}" class="btn btn-info">Income/Expense Tracking</a>
+    <a href="{% url 'restaurant_staff' restaurant.id %}" class="btn btn-info">View Staffs</a>
     <h2 class="mt-5 mb-3">Floors and Tables</h2>
     <a href="{% url 'add_floor' restaurant.id %}" class="btn btn-primary mb-3">Add Floor</a>
 

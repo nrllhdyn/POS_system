@@ -12,10 +12,15 @@ class CustomUserAdmin(UserAdmin):
     inlines = (StaffInline,)
 
 class StaffAdmin(admin.ModelAdmin):
-    list_display = ('user', 'restaurant', 'role', 'get_email')
+    list_display = ('get_full_name', 'user', 'restaurant', 'role', 'phone', 'get_email')
     list_filter = ('restaurant', 'role')
-    search_fields = ('user__username', 'user__email', 'restaurant__name')
-    ordering = ('restaurant', 'role', 'user__username')
+    search_fields = ('user__first_name', 'user__last_name', 'user__username', 'user__email', 'phone', 'restaurant__name')
+    ordering = ('user__last_name', 'user__first_name', 'restaurant__name')
+
+    def get_full_name(self, obj):
+        return f"{obj.user.first_name} {obj.user.last_name}"
+    get_full_name.short_description = 'Full Name'
+    get_full_name.admin_order_field = 'user__last_name'
 
     def get_email(self, obj):
         return obj.user.email
@@ -23,13 +28,15 @@ class StaffAdmin(admin.ModelAdmin):
     get_email.admin_order_field = 'user__email'
 
     fieldsets = (
-        (None, {'fields': ('user', 'restaurant', 'role')}),
+        (None, {'fields': ('user', 'restaurant', 'role', 'phone')}),
     )
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         if db_field.name == "user":
             kwargs["queryset"] = User.objects.filter(is_staff=False, is_superuser=False)
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    list_filter = ('restaurant', 'role')
 
 class FloorInline(admin.TabularInline):
     model = Floor

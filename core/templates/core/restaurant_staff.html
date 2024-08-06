@@ -42,12 +42,12 @@
                             </td>
                             <td>{{ member.phone|default:"N/A" }}</td>
                             <td>
-                                <button class="btn btn-sm btn-outline-secondary">
+                                <a href="{% url 'edit_staff' member.id %}" class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="btn btn-sm btn-outline-danger">
+                                </a>
+                                <a href="{% url 'delete_staff' member.id %}" class="btn btn-sm btn-outline-danger">
                                     <i class="fas fa-trash-alt"></i> Delete
-                                </button>
+                                </a>
                             </td>
                         </tr>
                         {% empty %}

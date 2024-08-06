@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Staff, Stock, Table
 from django.contrib.auth.decorators import login_required , user_passes_test
 from django.views.decorators.http import require_POST
-from .forms import FloorForm, IncomeExpenseForm, TableForm
+from .forms import FloorForm, IncomeExpenseForm, TableForm, StaffEditForm
 from django.db.models import F
 from django.db import transaction
 from decimal import Decimal
@@ -68,6 +68,30 @@ def restaurant_staff(request, restaurant_id):
     restaurant = Restaurant.objects.get(id=restaurant_id)
     staff = Staff.objects.filter(restaurant=restaurant).select_related('user')
     return render(request, 'core/restaurant_staff.html', {'restaurant': restaurant, 'staff': staff})
+
+@user_passes_test(is_restaurant_admin)
+def edit_staff(request, staff_id):
+    staff = get_object_or_404(Staff, id=staff_id)
+    if request.method == 'POST':
+        form = StaffEditForm(request.POST, instance=staff)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Staff member updated successfully.')
+            return redirect('restaurant_staff', restaurant_id=staff.restaurant.id)
+    else:
+        form = StaffEditForm(instance=staff)
+    return render(request, 'core/edit_staff.html', {'form': form, 'staff': staff})
+
+@user_passes_test(is_restaurant_admin)
+def delete_staff(request, staff_id):
+    staff = get_object_or_404(Staff, id=staff_id)
+    restaurant_id = staff.restaurant.id
+    if request.method == 'POST':
+        staff.user.delete()  
+        messages.success(request, 'Staff member deleted successfully.')
+        return redirect('restaurant_staff', restaurant_id=restaurant_id)
+    return render(request, 'core/delete_staff_confirm.html', {'staff': staff})
+
 
 @user_passes_test(is_waiter_or_admin)
 @login_required

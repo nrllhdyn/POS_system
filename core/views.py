@@ -69,18 +69,20 @@ def restaurant_staff(request, restaurant_id):
     staff = Staff.objects.filter(restaurant=restaurant)
     return render(request, 'core/restaurant_staff.html', {'restaurant': restaurant, 'staff': staff})
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def restaurant_list(request):
     restaurants = Restaurant.objects.filter(owner=request.user)
     return render(request, 'core/restaurant_list.html', {'restaurants': restaurants})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def restaurant_detail(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
     floors = restaurant.floors.all()
     return render(request, 'core/restaurant_detail.html', {'restaurant': restaurant,'floors':floors})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def add_floor(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
@@ -96,6 +98,7 @@ def add_floor(request, restaurant_id):
         form = FloorForm()
     return render(request, 'core/add_floor.html', {'form': form, 'restaurant': restaurant})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def add_table(request, floor_id):
     floor = get_object_or_404(Floor, id=floor_id, restaurant__owner=request.user)
@@ -111,6 +114,7 @@ def add_table(request, floor_id):
         form = TableForm()
     return render(request, 'core/add_table.html', {'form': form, 'floor': floor})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def edit_floor(request, floor_id):
     floor = get_object_or_404(Floor, id=floor_id, restaurant__owner=request.user)
@@ -124,6 +128,7 @@ def edit_floor(request, floor_id):
         form = FloorForm(instance=floor)
     return render(request, 'core/edit_floor.html', {'form': form, 'floor': floor})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def edit_table(request, table_id):
     table = get_object_or_404(Table, id=table_id, floor__restaurant__owner=request.user)
@@ -137,6 +142,7 @@ def edit_table(request, table_id):
         form = TableForm(instance=table)
     return render(request, 'core/edit_table.html', {'form': form, 'table': table})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def delete_floor(request, floor_id):
     floor = get_object_or_404(Floor, id=floor_id, restaurant__owner=request.user)
@@ -147,6 +153,7 @@ def delete_floor(request, floor_id):
         return redirect('restaurant_detail', restaurant_id=restaurant_id)
     return render(request, 'core/delete_floor.html', {'floor': floor})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def delete_table(request, table_id):
     table = get_object_or_404(Table, id=table_id, floor__restaurant__owner=request.user)
@@ -157,12 +164,14 @@ def delete_table(request, table_id):
         return redirect('restaurant_detail', restaurant_id=restaurant_id)
     return render(request, 'core/delete_table.html', {'table': table})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def menu_management(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
     categories = restaurant.categories.all()
     return render(request, 'core/menu_management.html', {'restaurant': restaurant, 'categories': categories})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def add_category(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
@@ -173,6 +182,7 @@ def add_category(request, restaurant_id):
         return redirect('menu_management', restaurant_id=restaurant.id)
     return render(request, 'core/add_category.html', {'restaurant': restaurant})
 
+@user_passes_test(is_restaurant_admin)
 @login_required
 def add_menu_item(request, category_id):
     category = get_object_or_404(Category, id=category_id, restaurant__owner=request.user)
@@ -185,12 +195,14 @@ def add_menu_item(request, category_id):
         return redirect('menu_management', restaurant_id=category.restaurant.id)
     return render(request, 'core/add_menu_item.html', {'category': category})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def floor_list(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
     floors = restaurant.floors.all()
     return render(request, 'core/floor_list.html', {'restaurant': restaurant, 'floors': floors})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def table_list(request, floor_id):
     floor = get_object_or_404(Floor, id=floor_id)
@@ -202,6 +214,7 @@ def table_list(request, floor_id):
     }
     return render(request, 'core/table_list.html', context)
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def create_order(request, table_id):
     table = get_object_or_404(Table, id=table_id)
@@ -251,6 +264,7 @@ def create_order(request, table_id):
 
     return render(request, 'core/create_order.html', {'table': table, 'menu_items': menu_items})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def close_table(request, table_id):
   table = get_object_or_404(Table, id=table_id)
@@ -269,13 +283,14 @@ def close_table(request, table_id):
   
   return redirect('floor_list', restaurant_id=restaurant_id)
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def table_detail(request, table_id):
     table = get_object_or_404(Table, id=table_id)
     active_orders = table.orders.filter(status='active').order_by('-created_at')
     return render(request, 'core/table_detail.html', {'table': table, 'active_orders': active_orders})
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def transfer_table(request, from_table_id):
     from_table = get_object_or_404(Table, id=from_table_id)
@@ -307,11 +322,13 @@ def transfer_table(request, from_table_id):
     available_tables = Table.objects.filter(status='available').exclude(id=from_table_id)
     return render(request, 'core/transfer_table.html', {'from_table': from_table, 'available_tables': available_tables})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def order_detail(request, order_id):
     order = get_object_or_404(Order, id=order_id, table__floor__restaurant__owner=request.user)
     return render(request, 'core/order_detail.html', {'order': order})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def delete_order_item(request, order_item_id):
     order_item = get_object_or_404(OrderItem, id=order_item_id)
@@ -344,6 +361,7 @@ def delete_order_item(request, order_item_id):
 
     return render(request, 'core/delete_order_item.html', {'order_item': order_item})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def update_order_status(request, order_id):
     order = get_object_or_404(Order, id=order_id, table__floor__restaurant__owner=request.user)
@@ -359,7 +377,7 @@ def update_order_status(request, order_id):
     
     return redirect('order_detail', order_id=order.id)
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def payment_view(request, table_id):
     table = get_object_or_404(Table, id=table_id)
@@ -420,13 +438,14 @@ def payment_view(request, table_id):
     }
     return render(request, 'core/payment.html', context)
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def income_expense_list(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
     income_expenses = IncomeExpense.objects.filter(restaurant=restaurant).order_by('-date')
     return render(request, 'core/income_expense_list.html', {'restaurant': restaurant, 'income_expenses': income_expenses})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def add_income_expense(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)
@@ -443,7 +462,7 @@ def add_income_expense(request, restaurant_id):
         form = IncomeExpenseForm()
     return render(request, 'core/add_income_expense.html', {'form': form, 'restaurant': restaurant})
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 @require_POST
 def add_income_expense_category(request):
@@ -463,7 +482,7 @@ def add_income_expense_category(request):
         }
     })
 
-
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def cancel_order_item(request, order_item_id):
     order_item = get_object_or_404(OrderItem, id=order_item_id)
@@ -489,6 +508,7 @@ def cancel_order_item(request, order_item_id):
     
     return render(request, 'core/cancel_order_item.html', {'order_item': order_item})
 
+@user_passes_test(is_waiter_or_admin)
 @login_required
 def manage_stock(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id)

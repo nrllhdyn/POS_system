@@ -6,7 +6,7 @@ class FloorInline(admin.TabularInline):
   extra = 1
 
 class RestaurantAdmin(admin.ModelAdmin):
-  list_display = ('name', 'address')
+  list_display = ('name', 'address', 'email', 'owner_phone','restaurant_phone')
   search_fields = ('name', 'address')
   inlines = [FloorInline]
 

@@ -7,7 +7,10 @@ from django.core.exceptions import ValidationError
 class Restaurant(models.Model):
     name = models.CharField(max_length=100)
     address = models.TextField()
+    email = models.EmailField()
     owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
+    owner_phone = models.CharField(max_length=14)
+    restaurant_phone = models.CharField(max_length=14)
 
     def __str__(self):
         return self.name

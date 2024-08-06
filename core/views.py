@@ -2,14 +2,15 @@ import json
 from django.contrib import messages
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Stock, Table
-from django.contrib.auth.decorators import login_required
+from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Staff, Stock, Table
+from django.contrib.auth.decorators import login_required , user_passes_test
 from django.views.decorators.http import require_POST
 from .forms import FloorForm, IncomeExpenseForm, TableForm
 from django.db.models import F
 from django.db import transaction
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+from django.contrib.auth.models import User, Group
 # Create your views here.
 def home(request):
     contex = {
@@ -17,6 +18,44 @@ def home(request):
         'welcome_message':'Welcome to Restaurant POS System',
     }
     return render(request,'core/home.html',contex)
+
+def is_restaurant_admin(user):
+    return user.groups.filter(name='Restaurant Admin').exists()
+
+def is_waiter_or_admin(user):
+    return user.groups.filter(name__in=['Waiter', 'Restaurant Admin']).exists()
+
+@user_passes_test(is_restaurant_admin)
+def add_staff(request, restaurant_id):
+    restaurant = Restaurant.objects.get(id=restaurant_id)
+    if request.method == 'POST':
+        username = request.POST['username']
+        password = request.POST['password']
+        role = request.POST['role']
+        
+        if Staff.objects.filter(restaurant=restaurant, role='waiter').count() >= 10 and role == 'waiter':
+            messages.error(request, 'Maximum number of waiters reached for this restaurant.')
+            return redirect('add_staff', restaurant_id=restaurant_id)
+        
+        user = User.objects.create_user(username=username, password=password)
+        if role == 'admin':
+            group = Group.objects.get(name='Restaurant Admin')
+        else:
+            group = Group.objects.get(name='Waiter')
+        user.groups.add(group)
+        
+        Staff.objects.create(user=user, restaurant=restaurant, role=role)
+        messages.success(request, f'{role.capitalize()} added successfully.')
+        return redirect('restaurant_staff', restaurant_id=restaurant_id)
+    
+    return render(request, 'core/add_staff.html', {'restaurant': restaurant})
+
+@user_passes_test(is_restaurant_admin)
+def restaurant_staff(request, restaurant_id):
+    restaurant = Restaurant.objects.get(id=restaurant_id)
+    staff = Staff.objects.filter(restaurant=restaurant)
+    return render(request, 'core/restaurant_staff.html', {'restaurant': restaurant, 'staff': staff})
+
 
 @login_required
 def restaurant_list(request):

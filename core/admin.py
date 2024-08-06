@@ -102,7 +102,7 @@ class StockAdmin(admin.ModelAdmin):
   search_fields = ('menu_item__name', 'restaurant__name')
 
 class MenuItemAdmin(admin.ModelAdmin):
-  list_display = ('name', 'price', 'category', 'track_stock')
+  list_display = ('name', 'price', 'category','track_stock')
   list_filter = ('category', 'track_stock')
   search_fields = ('name', 'description')
 

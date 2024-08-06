@@ -66,7 +66,7 @@ def add_staff(request, restaurant_id):
 @user_passes_test(is_restaurant_admin)
 def restaurant_staff(request, restaurant_id):
     restaurant = Restaurant.objects.get(id=restaurant_id)
-    staff = Staff.objects.filter(restaurant=restaurant)
+    staff = Staff.objects.filter(restaurant=restaurant).select_related('user')
     return render(request, 'core/restaurant_staff.html', {'restaurant': restaurant, 'staff': staff})
 
 @user_passes_test(is_waiter_or_admin)

@@ -21,7 +21,10 @@
                         <tr>
                             <th scope="col">#</th>
                             <th scope="col">Username</th>
+                            <th scope="col">First Name</th>
+                            <th scope="col">Last Name</th>
                             <th scope="col">Role</th>
+                            <th scope="col">Phone</th>
                             <th scope="col">Actions</th>
                         </tr>
                     </thead>
@@ -30,11 +33,14 @@
                         <tr>
                             <th scope="row">{{ forloop.counter }}</th>
                             <td>{{ member.user.username }}</td>
+                            <td>{{ member.user.first_name }}</td>
+                            <td>{{ member.user.last_name }}</td>
                             <td>
                                 <span class="badge bg-{% if member.role == 'admin' %}primary{% else %}secondary{% endif %}">
                                     {{ member.get_role_display }}
                                 </span>
                             </td>
+                            <td>{{ member.phone|default:"N/A" }}</td>
                             <td>
                                 <button class="btn btn-sm btn-outline-secondary">
                                     <i class="fas fa-edit"></i> Edit
@@ -46,7 +52,7 @@
                         </tr>
                         {% empty %}
                         <tr>
-                            <td colspan="4" class="text-center">No staff members found.</td>
+                            <td colspan="7" class="text-center">No staff members found.</td>
                         </tr>
                         {% endfor %}
                     </tbody>

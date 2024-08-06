@@ -1,3 +1,4 @@
+from datetime import timedelta
 import json
 from django.contrib import messages
 from django.http import JsonResponse
@@ -6,10 +7,12 @@ from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restau
 from django.contrib.auth.decorators import login_required , user_passes_test
 from django.views.decorators.http import require_POST
 from .forms import FloorForm, IncomeExpenseForm, TableForm, StaffEditForm
-from django.db.models import F
+from django.db.models import F, Sum, Count, ExpressionWrapper, DecimalField
+from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncHour, TruncDay
 from django.db import transaction
 from decimal import Decimal
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from django.contrib.auth.models import User, Group
 # Create your views here.
 def home(request):
@@ -566,3 +569,75 @@ def manage_stock(request, restaurant_id):
             item.current_warning_threshold = 5
 
     return render(request, 'core/manage_stock.html', {'restaurant': restaurant, 'menu_items': menu_items})
+
+@user_passes_test(is_restaurant_admin)
+@login_required
+def sales_report(request):
+    end_date = timezone.now()
+    start_date = end_date - timedelta(days=30)  # Son 30 günün verilerini al
+
+    # Toplam fiyatı hesapla
+    total_price_expression = ExpressionWrapper(
+        Sum(F('items__quantity') * F('items__menu_item__price')) - F('discount'),
+        output_field=DecimalField()
+    )
+
+    # Günlük satışlar
+    daily_sales = Order.objects.filter(
+        created_at__range=(start_date, end_date),
+        status='completed'
+    ).annotate(
+        date=TruncDate('created_at')
+    ).values('date').annotate(
+        total_sales=total_price_expression
+    ).order_by('date')
+
+    # Haftalık satışlar
+    weekly_sales = Order.objects.filter(
+        created_at__range=(start_date, end_date),
+        status='completed'
+    ).annotate(
+        week=TruncWeek('created_at')
+    ).values('week').annotate(
+        total_sales=total_price_expression
+    ).order_by('week')
+
+    # Aylık satışlar
+    monthly_sales = Order.objects.filter(
+        created_at__range=(start_date, end_date),
+        status='completed'
+    ).annotate(
+        month=TruncMonth('created_at')
+    ).values('month').annotate(
+        total_sales=total_price_expression
+    ).order_by('month')
+
+    # En yoğun saatler
+    busiest_hours = Order.objects.filter(
+        created_at__range=(start_date, end_date),
+        status='completed'
+    ).annotate(
+        hour=TruncHour('created_at')
+    ).values('hour').annotate(
+        order_count=Count('id')
+    ).order_by('-order_count')[:5]  # En yoğun 5 saat
+
+    # En yoğun günler
+    busiest_days = Order.objects.filter(
+        created_at__range=(start_date, end_date),
+        status='completed'
+    ).annotate(
+        day=TruncDay('created_at')
+    ).values('day').annotate(
+        order_count=Count('id')
+    ).order_by('-order_count')[:5]  # En yoğun 5 gün
+
+    context = {
+        'daily_sales': daily_sales,
+        'weekly_sales': weekly_sales,
+        'monthly_sales': monthly_sales,
+        'busiest_hours': busiest_hours,
+        'busiest_days': busiest_days,
+    }
+
+    return render(request, 'core/sales_report.html', context)

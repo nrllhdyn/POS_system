@@ -1,0 +1,131 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2 class="text-center mb-4">Sales Report</h2>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Daily Sales</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Total Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in daily_sales %}
+                            <tr>
+                                <td>{{ sale.date|date:"Y-m-d" }}</td>
+                                <td>${{ sale.total_sales|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Weekly Sales</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Week</th>
+                                <th>Total Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in weekly_sales %}
+                            <tr>
+                                <td>{{ sale.week|date:"Y-m-d" }}</td>
+                                <td>${{ sale.total_sales|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Monthly Sales</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Month</th>
+                                <th>Total Sales</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for sale in monthly_sales %}
+                            <tr>
+                                <td>{{ sale.month|date:"Y-m" }}</td>
+                                <td>${{ sale.total_sales|floatformat:2 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Busiest Hours</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Hour</th>
+                                <th>Order Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for hour in busiest_hours %}
+                            <tr>
+                                <td>{{ hour.hour|time:"H:i" }}</td>
+                                <td>{{ hour.order_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h3>Busiest Days</h3>
+                </div>
+                <div class="card-body">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Day</th>
+                                <th>Order Count</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day in busiest_days %}
+                            <tr>
+                                <td>{{ day.day|date:"Y-m-d" }}</td>
+                                <td>{{ day.order_count }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

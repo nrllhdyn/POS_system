@@ -91,6 +91,10 @@ class Order(models.Model):
     def get_total(self):
         return sum(item.get_subtotal() for item in self.items.all())
     
+    @property
+    def total_price(self):
+        return sum(item.subtotal for item in self.items.all()) - self.discount
+    
     def get_total_with_discount(self):
         return self.get_total() - self.discount
     

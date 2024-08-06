@@ -572,7 +572,8 @@ def manage_stock(request, restaurant_id):
 
 @user_passes_test(is_restaurant_admin)
 @login_required
-def sales_report(request):
+def sales_report(request, restaurant_id):
+    restaurant = get_object_or_404(Restaurant, id=restaurant_id)
     end_date = timezone.now()
     start_date = end_date - timedelta(days=30)  # Son 30 günün verilerini al
 
@@ -585,7 +586,8 @@ def sales_report(request):
     # Günlük satışlar
     daily_sales = Order.objects.filter(
         created_at__range=(start_date, end_date),
-        status='completed'
+        status='completed',
+        table__floor__restaurant=restaurant  # Restorana göre filtreleme
     ).annotate(
         date=TruncDate('created_at')
     ).values('date').annotate(
@@ -595,7 +597,8 @@ def sales_report(request):
     # Haftalık satışlar
     weekly_sales = Order.objects.filter(
         created_at__range=(start_date, end_date),
-        status='completed'
+        status='completed',
+        table__floor__restaurant=restaurant  # Restorana göre filtreleme
     ).annotate(
         week=TruncWeek('created_at')
     ).values('week').annotate(
@@ -605,7 +608,8 @@ def sales_report(request):
     # Aylık satışlar
     monthly_sales = Order.objects.filter(
         created_at__range=(start_date, end_date),
-        status='completed'
+        status='completed',
+        table__floor__restaurant=restaurant  # Restorana göre filtreleme
     ).annotate(
         month=TruncMonth('created_at')
     ).values('month').annotate(
@@ -615,7 +619,8 @@ def sales_report(request):
     # En yoğun saatler
     busiest_hours = Order.objects.filter(
         created_at__range=(start_date, end_date),
-        status='completed'
+        status='completed',
+        table__floor__restaurant=restaurant  # Restorana göre filtreleme
     ).annotate(
         hour=TruncHour('created_at')
     ).values('hour').annotate(
@@ -625,7 +630,8 @@ def sales_report(request):
     # En yoğun günler
     busiest_days = Order.objects.filter(
         created_at__range=(start_date, end_date),
-        status='completed'
+        status='completed',
+        table__floor__restaurant=restaurant  # Restorana göre filtreleme
     ).annotate(
         day=TruncDay('created_at')
     ).values('day').annotate(
@@ -633,6 +639,7 @@ def sales_report(request):
     ).order_by('-order_count')[:5]  # En yoğun 5 gün
 
     context = {
+        'restaurant': restaurant,
         'daily_sales': daily_sales,
         'weekly_sales': weekly_sales,
         'monthly_sales': monthly_sales,

@@ -31,22 +31,35 @@ def add_staff(request, restaurant_id):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
+        first_name = request.POST['first_name']
+        last_name = request.POST['last_name']
+        email = request.POST['email']
+        phone = request.POST['phone']
         role = request.POST['role']
         
         if Staff.objects.filter(restaurant=restaurant, role='waiter').count() >= 10 and role == 'waiter':
             messages.error(request, 'Maximum number of waiters reached for this restaurant.')
             return redirect('add_staff', restaurant_id=restaurant_id)
         
-        user = User.objects.create_user(username=username, password=password)
-        if role == 'admin':
-            group = Group.objects.get(name='Restaurant Admin')
-        else:
-            group = Group.objects.get(name='Waiter')
-        user.groups.add(group)
-        
-        Staff.objects.create(user=user, restaurant=restaurant, role=role)
-        messages.success(request, f'{role.capitalize()} added successfully.')
-        return redirect('restaurant_staff', restaurant_id=restaurant_id)
+        try:
+            user = User.objects.create_user(
+                username=username, 
+                password=password,
+                first_name=first_name,
+                last_name=last_name,
+                email=email
+            )
+            if role == 'admin':
+                group = Group.objects.get(name='Restaurant Admin')
+            else:
+                group = Group.objects.get(name='Waiter')
+            user.groups.add(group)
+            
+            Staff.objects.create(user=user, restaurant=restaurant, role=role, phone=phone)
+            messages.success(request, f'{role.capitalize()} added successfully.')
+            return redirect('restaurant_staff', restaurant_id=restaurant_id)
+        except Exception as e:
+            messages.error(request, f'Error creating user: {str(e)}')
     
     return render(request, 'core/add_staff.html', {'restaurant': restaurant})
 

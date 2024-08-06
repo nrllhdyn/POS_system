@@ -1,9 +1,39 @@
 from django.contrib import admin
-from .models import Category, Floor, MenuItem, Order, OrderItem, Payment, Restaurant, Stock, Table, IncomeExpense, IncomeExpenseCategory
+from .models import Category, Floor, MenuItem, Order, OrderItem, Payment, Restaurant, Staff, Stock, Table, IncomeExpense, IncomeExpenseCategory
+from django.contrib.auth.admin import UserAdmin
+from django.contrib.auth.models import User
+
+class StaffInline(admin.StackedInline):
+    model = Staff
+    can_delete = False
+    verbose_name_plural = 'Staff'
+
+class CustomUserAdmin(UserAdmin):
+    inlines = (StaffInline,)
+
+class StaffAdmin(admin.ModelAdmin):
+    list_display = ('user', 'restaurant', 'role', 'get_email')
+    list_filter = ('restaurant', 'role')
+    search_fields = ('user__username', 'user__email', 'restaurant__name')
+    ordering = ('restaurant', 'role', 'user__username')
+
+    def get_email(self, obj):
+        return obj.user.email
+    get_email.short_description = 'Email'
+    get_email.admin_order_field = 'user__email'
+
+    fieldsets = (
+        (None, {'fields': ('user', 'restaurant', 'role')}),
+    )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "user":
+            kwargs["queryset"] = User.objects.filter(is_staff=False, is_superuser=False)
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 class FloorInline(admin.TabularInline):
-  model = Floor
-  extra = 1
+    model = Floor
+    extra = 1
 
 class RestaurantAdmin(admin.ModelAdmin):
   list_display = ('name', 'address', 'email', 'owner_phone','restaurant_phone')
@@ -69,6 +99,10 @@ class MenuItemAdmin(admin.ModelAdmin):
   list_filter = ('category', 'track_stock')
   search_fields = ('name', 'description')
 
+
+admin.site.unregister(User)
+admin.site.register(User, CustomUserAdmin)
+admin.site.register(Staff, StaffAdmin)
 admin.site.register(Restaurant, RestaurantAdmin)
 admin.site.register(Floor, FloorAdmin)
 admin.site.register(Table, TableAdmin)

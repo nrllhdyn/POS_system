@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from .models import Floor, IncomeExpense, IncomeExpenseCategory, Payment, Restaurant, Category, MenuItem, Order , OrderItem, Staff, Stock, Table
 from django.contrib.auth.decorators import login_required , user_passes_test
 from django.views.decorators.http import require_POST
-from .forms import FloorForm, IncomeExpenseForm, TableForm, StaffEditForm
+from .forms import FloorForm, IncomeExpenseForm, SalaryForm, TableForm, StaffEditForm
 from django.db.models import F, Sum, Count, ExpressionWrapper, DecimalField
 from django.db.models.functions import TruncDate, TruncWeek, TruncMonth, TruncHour, TruncDay
 from django.db import transaction
@@ -648,3 +648,19 @@ def sales_report(request, restaurant_id):
     }
 
     return render(request, 'core/sales_report.html', context)
+
+@login_required
+@user_passes_test(is_restaurant_admin)
+def add_salary(request):
+  if request.method == 'POST':
+      form = SalaryForm(request.POST)
+      if form.is_valid():
+          salary_entry = form.save(commit=False)
+          salary_entry.type = 'expense'  # Maaş gider olarak kaydedilecek
+          salary_entry.save()
+          messages.success(request, 'Salary information added successfully.')
+          return redirect('add_salary')  # Başka bir sayfaya yönlendirin
+  else:
+      form = SalaryForm()
+  
+  return render(request, 'core/add_salary.html', {'form': form})

@@ -53,3 +53,13 @@ class StaffEditForm(forms.ModelForm):
             staff.user.save()
             staff.save()
         return staff
+
+class SalaryForm(forms.ModelForm):
+    class Meta:
+        model = IncomeExpense
+        fields = ['restaurant', 'category', 'amount', 'description', 'date', 'staff']
+        widgets = {
+            'date': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+

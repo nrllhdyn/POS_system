@@ -152,6 +152,7 @@ class IncomeExpense(models.Model):
     date = models.DateField()
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True,blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+    staff = models.ForeignKey('Staff', on_delete=models.SET_NULL, null=True) 
 
     def __str__(self):
         return f"{self.get_type_display()} - {self.amount} - {self.date}"

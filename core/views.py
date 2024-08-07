@@ -666,7 +666,7 @@ def add_salary(request):
         staff = request.user.staff
         restaurant = staff.restaurant
     except Staff.DoesNotExist:
-        return redirect('home')  # veya uygun bir hata sayfasına yönlendirin
+        return redirect('restaurant_list')  # veya uygun bir hata sayfasına yönlendirin
 
     if request.method == 'POST':
         form = SalaryForm(request.POST, restaurant=restaurant)

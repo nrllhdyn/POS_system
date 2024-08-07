@@ -665,8 +665,11 @@ def add_salary(request):
             salary.restaurant = restaurant
             salary.type = 'expense'
             salary.created_by = request.user
+            category, _ = IncomeExpenseCategory.objects.get_or_create(name="Staff Salary", is_income=False)
+            salary.category = category
             salary.save()
-            return redirect('salary_list')  # veya uygun bir sayfaya yönlendirin
+            messages.success(request, "Salary information added successfully.")
+            return redirect('add_salary')  # veya uygun bir sayfaya yönlendirin
     else:
         form = SalaryForm(restaurant=restaurant)
 

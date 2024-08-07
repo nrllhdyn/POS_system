@@ -11,15 +11,9 @@
                 <div class="card-body">
                     <form method="post" novalidate>
                         {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.restaurant.id_for_label }}" class="form-label">Restaurant</label>
-                                {{ form.restaurant }}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label for="{{ form.category.id_for_label }}" class="form-label">Category</label>
-                                {{ form.category }}
-                            </div>
+                        <div class="mb-3">
+                            <label for="{{ form.staff.id_for_label }}" class="form-label">Employee</label>
+                            {{ form.staff }}
                         </div>
                         <div class="row">
                             <div class="col-md-6 mb-3">
@@ -30,10 +24,6 @@
                                 <label for="{{ form.date.id_for_label }}" class="form-label">Date</label>
                                 {{ form.date }}
                             </div>
-                        </div>
-                        <div class="mb-3">
-                            <label for="{{ form.staff.id_for_label }}" class="form-label">Employee</label>
-                            {{ form.staff }}
                         </div>
                         <div class="mb-3">
                             <label for="{{ form.description.id_for_label }}" class="form-label">Description</label>

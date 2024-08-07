@@ -60,9 +60,8 @@ class SalaryForm(forms.ModelForm):
 
     class Meta:
         model = IncomeExpense
-        fields = ['category', 'amount', 'description', 'date', 'staff']
+        fields = [ 'amount', 'description', 'date', 'staff']
         widgets = {
-            'category': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),

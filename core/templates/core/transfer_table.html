@@ -7,9 +7,9 @@
         {% csrf_token %}
         <div class="form-group">
             <label for="to_table_id">Select Destination Table:</label>
-            <select name="to_table_id" id="to_table_id" class="form-control" required>
+            <select name="to_table_id" class="form-select">
                 {% for table in available_tables %}
-                    <option value="{{ table.id }}">Table {{ table.number }}</option>
+                    <option value="{{ table.id }}">Floor: {{ table.floor.name }} - Table {{ table.number }}</option>
                 {% endfor %}
             </select>
         </div>

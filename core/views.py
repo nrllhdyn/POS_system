@@ -320,11 +320,17 @@ def table_detail(request, table_id):
 @user_passes_test(is_waiter_or_admin)
 @login_required
 def transfer_table(request, from_table_id):
-    from_table = get_object_or_404(Table, id=from_table_id)
+    # Get the staff member and their associated restaurant
+    staff = get_object_or_404(Staff, user=request.user)
+    restaurant = staff.restaurant
+
+    # Get the from_table, ensuring it belongs to the staff's restaurant
+    from_table = get_object_or_404(Table, id=from_table_id, floor__restaurant=restaurant)
     
     if request.method == 'POST':
         to_table_id = request.POST.get('to_table_id')
-        to_table = get_object_or_404(Table, id=to_table_id)
+        # Ensure the to_table also belongs to the same restaurant
+        to_table = get_object_or_404(Table, id=to_table_id, floor__restaurant=restaurant)
         
         if to_table.status != 'available':
             messages.error(request, 'The destination table is not available.')
@@ -346,7 +352,11 @@ def transfer_table(request, from_table_id):
         return redirect('table_detail', table_id=to_table_id)
     
     # If GET request, show form to select destination table
-    available_tables = Table.objects.filter(status='available').exclude(id=from_table_id)
+    available_tables = Table.objects.filter(
+        floor__restaurant=restaurant,
+        status='available'
+    ).exclude(id=from_table_id).order_by('floor__name', 'number')
+    
     return render(request, 'core/transfer_table.html', {'from_table': from_table, 'available_tables': available_tables})
 
 @user_passes_test(is_waiter_or_admin)

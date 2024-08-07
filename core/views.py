@@ -114,7 +114,7 @@ def restaurant_detail(request, restaurant_id):
 def add_floor(request, restaurant_id):
     restaurant = get_object_or_404(Restaurant, id=restaurant_id, owner=request.user)
     if request.method == 'POST':
-        form = FloorForm(request.POST)
+        form = FloorForm(request.POST, restaurant=restaurant)
         if form.is_valid():
             floor = form.save(commit=False)
             floor.restaurant = restaurant
@@ -122,7 +122,7 @@ def add_floor(request, restaurant_id):
             messages.success(request, 'Floor added successfully.')
             return redirect('restaurant_detail', restaurant_id=restaurant.id)
     else:
-        form = FloorForm()
+        form = FloorForm(restaurant=restaurant)
     return render(request, 'core/add_floor.html', {'form': form, 'restaurant': restaurant})
 
 @user_passes_test(is_restaurant_admin)
@@ -146,13 +146,13 @@ def add_table(request, floor_id):
 def edit_floor(request, floor_id):
     floor = get_object_or_404(Floor, id=floor_id, restaurant__owner=request.user)
     if request.method == 'POST':
-        form = FloorForm(request.POST, instance=floor)
+        form = FloorForm(request.POST, instance=floor, restaurant=floor.restaurant)
         if form.is_valid():
             form.save()
             messages.success(request, 'Floor updated successfully.')
             return redirect('restaurant_detail', restaurant_id=floor.restaurant.id)
     else:
-        form = FloorForm(instance=floor)
+        form = FloorForm(instance=floor, restaurant=floor.restaurant)
     return render(request, 'core/edit_floor.html', {'form': form, 'floor': floor})
 
 @user_passes_test(is_restaurant_admin)

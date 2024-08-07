@@ -8,18 +8,29 @@
         {% for field in form %}
             <div class="mb-3">
                 {{ field.label_tag }}
-                <input type="{% if field.field.widget.input_type %}{{ field.field.widget.input_type }}{% else %}text{% endif %}" class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                <input type="{% if field.field.widget.input_type %}{{ field.field.widget.input_type }}{% else %}text{% endif %}" 
+                       class="form-control {% if field.errors %}is-invalid{% endif %}" 
+                       id="{{ field.id_for_label }}" 
+                       name="{{ field.name }}" 
+                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                 {% if field.help_text %}
                     <small class="form-text text-muted">{{ field.help_text }}</small>
                 {% endif %}
                 {% for error in field.errors %}
-                    <div class="invalid-feedback d-block">
+                    <div class="invalid-feedback">
                         {{ error }}
                     </div>
                 {% endfor %}
             </div>
         {% endfor %}
         <button type="submit" class="btn btn-primary">Update Floor</button>
+        <a href="{% url 'restaurant_detail' restaurant_id=floor.restaurant.id %}" class="btn btn-secondary">Cancel</a>
     </form>
+</div>
+
+<div class="mt-4">
+    <h2>Floor Details</h2>
+    <p><strong>Total Tables:</strong> {{ floor.get_total_tables }}</p>
+    <p><strong>Available Tables:</strong> {{ floor.get_available_tables }}</p>
 </div>
 {% endblock %}

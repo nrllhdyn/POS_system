@@ -3,25 +3,54 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from phonenumber_field.modelfields import PhoneNumberField
 # Create your models here.
 
 class Restaurant(models.Model):
-    name = models.CharField(max_length=100)
-    address = models.TextField()
-    email = models.EmailField()
-    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants')
-    owner_phone = models.CharField(max_length=14)
-    restaurant_phone = models.CharField(max_length=14)
+    name = models.CharField(max_length=100, verbose_name="Restaurant Name")
+    address = models.TextField(verbose_name="Address")
+    email = models.EmailField(verbose_name="Email")
+    owner = models.ForeignKey(User, on_delete=models.CASCADE, related_name='restaurants',verbose_name="Owner")
+    owner_phone = PhoneNumberField(verbose_name="Owner Phone")
+    restaurant_phone = PhoneNumberField(verbose_name="Restaurant Phone")
+
+    class Meta:
+        verbose_name = "Restaurant"
+        verbose_name_plural = "Restaurants"
+        ordering = ['name']
 
     def __str__(self):
         return self.name
+    
+    def get_total_tables(self):
+        return sum(floor.tables.count() for floor in self.floors.all())
+
+    def get_active_orders(self):
+        return Order.objects.filter(table__floor__restaurant=self, status='active').count()
 
 class Floor(models.Model):
-    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='floors')
-    name = models.CharField(max_length=50)  
+    restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='floors',verbose_name="Restaurant")
+    name = models.CharField(max_length=50, verbose_name="Floor Name")  
+
+    class Meta:
+        verbose_name = "Floor"
+        verbose_name_plural = "Floors"
+        ordering = ['restaurant', 'name']
+        unique_together = ['restaurant', 'name']
 
     def __str__(self):
         return f"{self.restaurant.name} - {self.name}"
+
+    def clean(self):
+        if self.restaurant_id is not None and self.name:
+            if Floor.objects.filter(restaurant=self.restaurant, name=self.name).exclude(pk=self.pk).exists():
+                raise ValidationError("A floor with this name already exists in this restaurant.")
+
+    def get_total_tables(self):
+        return self.tables.count()
+
+    def get_available_tables(self):
+        return self.tables.filter(status='available').count()
 
 class Table(models.Model):
     STATUS_CHOICES = [

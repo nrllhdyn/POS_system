@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'core',
     'widget_tweaks',
+    'phonenumber_field',
 ]
 
 MIDDLEWARE = [

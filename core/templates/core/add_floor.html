@@ -8,12 +8,16 @@
         {% for field in form %}
             <div class="mb-3">
                 {{ field.label_tag }}
-                <input type="{% if field.field.widget.input_type %}{{ field.field.widget.input_type }}{% else %}text{% endif %}" class="form-control" id="{{ field.id_for_label }}" name="{{ field.name }}" {% if field.value %}value="{{ field.value }}"{% endif %}>
+                <input type="{% if field.field.widget.input_type %}{{ field.field.widget.input_type }}{% else %}text{% endif %}" 
+                       class="form-control {% if field.errors %}is-invalid{% endif %}" 
+                       id="{{ field.id_for_label }}" 
+                       name="{{ field.name }}" 
+                       {% if field.value %}value="{{ field.value }}"{% endif %}>
                 {% if field.help_text %}
                     <small class="form-text text-muted">{{ field.help_text }}</small>
                 {% endif %}
                 {% for error in field.errors %}
-                    <div class="invalid-feedback d-block">
+                    <div class="invalid-feedback">
                         {{ error }}
                     </div>
                 {% endfor %}

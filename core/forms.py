@@ -3,9 +3,21 @@ from .models import Floor, IncomeExpense, OrderItem, Table , Staff
 from django.contrib.auth.models import User
 
 class FloorForm(forms.ModelForm):
-  class Meta:
-      model = Floor
-      fields = ['name']
+    class Meta:
+        model = Floor
+        fields = ['name']
+
+    def __init__(self, *args, **kwargs):
+        self.restaurant = kwargs.pop('restaurant', None)
+        super().__init__(*args, **kwargs)
+
+    def clean_name(self):
+        name = self.cleaned_data['name']
+        if self.restaurant:
+            if Floor.objects.filter(restaurant=self.restaurant, name=name).exclude(pk=self.instance.pk).exists():
+                raise forms.ValidationError("A floor with this name already exists in this restaurant.")
+        return name
+
 
 class TableForm(forms.ModelForm):
   class Meta:

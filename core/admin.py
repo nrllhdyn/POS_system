@@ -41,11 +41,40 @@ class StaffAdmin(admin.ModelAdmin):
 class FloorInline(admin.TabularInline):
     model = Floor
     extra = 1
+    show_change_link = True
 
+@admin.register(Floor)
+class FloorAdmin(admin.ModelAdmin):
+    list_display = ('name', 'restaurant', 'total_tables', 'available_tables')
+    list_filter = ('restaurant',)
+    search_fields = ('name', 'restaurant__name')
+
+    def total_tables(self, obj):
+        return obj.get_total_tables()
+    total_tables.short_description = 'Total Tables'
+
+    def available_tables(self, obj):
+        return obj.get_available_tables()
+    available_tables.short_description = 'Available Tables'
+
+@admin.register(Restaurant)
 class RestaurantAdmin(admin.ModelAdmin):
-  list_display = ('name', 'address', 'email', 'owner_phone','restaurant_phone')
-  search_fields = ('name', 'address')
-  inlines = [FloorInline]
+    list_display = ('name', 'address', 'email', 'owner_phone', 'restaurant_phone', 'total_floors', 'total_tables', 'active_orders')
+    list_filter = ('name',)
+    search_fields = ('name', 'address', 'email')
+    inlines = [FloorInline]
+
+    def total_floors(self, obj):
+        return obj.floors.count()
+    total_floors.short_description = 'Total Floors'
+
+    def total_tables(self, obj):
+        return obj.get_total_tables()
+    total_tables.short_description = 'Total Tables'
+
+    def active_orders(self, obj):
+        return obj.get_active_orders()
+    active_orders.short_description = 'Active Orders'
 
 class TableInline(admin.TabularInline):
   model = Table
@@ -110,8 +139,6 @@ class MenuItemAdmin(admin.ModelAdmin):
 admin.site.unregister(User)
 admin.site.register(User, CustomUserAdmin)
 admin.site.register(Staff, StaffAdmin)
-admin.site.register(Restaurant, RestaurantAdmin)
-admin.site.register(Floor, FloorAdmin)
 admin.site.register(Table, TableAdmin)
 admin.site.register(Category, CategoryAdmin)
 admin.site.register(Order, OrderAdmin)

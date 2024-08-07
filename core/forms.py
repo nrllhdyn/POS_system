@@ -56,15 +56,20 @@ class StaffEditForm(forms.ModelForm):
 
 
 class SalaryForm(forms.ModelForm):
+    staff = forms.ModelChoiceField(queryset=Staff.objects.none(), label='Employee',widget=forms.Select(attrs={'class': 'form-select'}))
+
     class Meta:
         model = IncomeExpense
-        fields = ['restaurant', 'category', 'amount', 'description', 'date', 'staff']
+        fields = ['category', 'amount', 'description', 'date', 'staff']
         widgets = {
-            'restaurant': forms.Select(attrs={'class': 'form-select'}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'staff': forms.Select(attrs={'class': 'form-select'}),
         }
 
+    def __init__(self, *args, **kwargs):
+        restaurant = kwargs.pop('restaurant', None)
+        super().__init__(*args, **kwargs)
+        if restaurant:
+            self.fields['staff'].queryset = Staff.objects.filter(restaurant=restaurant)

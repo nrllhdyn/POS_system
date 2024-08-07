@@ -652,15 +652,22 @@ def sales_report(request, restaurant_id):
 @login_required
 @user_passes_test(is_restaurant_admin)
 def add_salary(request):
-  if request.method == 'POST':
-      form = SalaryForm(request.POST)
-      if form.is_valid():
-          salary_entry = form.save(commit=False)
-          salary_entry.type = 'expense'  # Maaş gider olarak kaydedilecek
-          salary_entry.save()
-          messages.success(request, 'Salary information added successfully.')
-          return redirect('add_salary')  # Başka bir sayfaya yönlendirin
-  else:
-      form = SalaryForm()
-  
-  return render(request, 'core/add_salary.html', {'form': form})
+    try:
+        staff = request.user.staff
+        restaurant = staff.restaurant
+    except Staff.DoesNotExist:
+        return redirect('home')  # veya uygun bir hata sayfasına yönlendirin
+
+    if request.method == 'POST':
+        form = SalaryForm(request.POST, restaurant=restaurant)
+        if form.is_valid():
+            salary = form.save(commit=False)
+            salary.restaurant = restaurant
+            salary.type = 'expense'
+            salary.created_by = request.user
+            salary.save()
+            return redirect('salary_list')  # veya uygun bir sayfaya yönlendirin
+    else:
+        form = SalaryForm(restaurant=restaurant)
+
+    return render(request, 'core/add_salary.html', {'form': form})

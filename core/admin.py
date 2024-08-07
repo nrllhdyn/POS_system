@@ -98,7 +98,7 @@ class IncomeExpenseCategoryAdmin(admin.ModelAdmin):
 
 class StockAdmin(admin.ModelAdmin):
   list_display = ('menu_item', 'restaurant', 'quantity', 'warning_threshold')
-  list_filter = ('restaurant', 'menu_item')
+  list_filter = ('restaurant', 'menu_item__category')
   search_fields = ('menu_item__name', 'restaurant__name')
 
 class MenuItemAdmin(admin.ModelAdmin):

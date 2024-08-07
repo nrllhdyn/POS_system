@@ -355,7 +355,7 @@ def transfer_table(request, from_table_id):
     available_tables = Table.objects.filter(
         floor__restaurant=restaurant,
         status='available'
-    ).exclude(id=from_table_id).order_by('floor__name', 'number')
+    ).exclude(id=from_table_id)
     
     return render(request, 'core/transfer_table.html', {'from_table': from_table, 'available_tables': available_tables})
 

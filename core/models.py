@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.core.exceptions import ValidationError
+from django.core.validators import MinValueValidator
 # Create your models here.
 
 class Restaurant(models.Model):
@@ -40,6 +41,9 @@ class Table(models.Model):
         self.save()
         for order in self.orders.filter(status__in=['pending', 'preparing', 'ready', 'delivered']):
             order.complete()
+    
+    class Meta:
+        ordering = ['floor__name', 'number']
 
 class Category(models.Model):
     restaurant = models.ForeignKey(Restaurant, on_delete=models.CASCADE, related_name='categories')
@@ -192,10 +196,17 @@ class Stock(models.Model):
     restaurant = models.ForeignKey('Restaurant', on_delete=models.CASCADE, related_name='stocks')
     menu_item = models.ForeignKey('MenuItem', on_delete=models.CASCADE, related_name='stocks')
     quantity = models.PositiveIntegerField(default=0)
-    warning_threshold = models.PositiveIntegerField(default=10)
+    warning_threshold = models.PositiveIntegerField(
+        default=10,
+        validators=[MinValueValidator(1)],
+        help_text="Minimum stock level to trigger a warning."
+    )
 
     class Meta:
         unique_together = ('restaurant', 'menu_item')
+        verbose_name = "Stock Item"
+        verbose_name_plural = "Stock Items"
+        ordering = ['restaurant', 'menu_item__name']
 
     def __str__(self):
         return f"{self.menu_item.name} - {self.restaurant.name}"
@@ -203,6 +214,13 @@ class Stock(models.Model):
     def clean(self):
         if self.warning_threshold > self.quantity:
             raise ValidationError("Warning threshold cannot be greater than the quantity.")
+        
+    def update_quantity(self, amount):
+        new_quantity = self.quantity + amount
+        if new_quantity < 0:
+            raise ValidationError("Stock cannot be negative.")
+        self.quantity = new_quantity
+        self.save()
 
 class Staff(models.Model):
     ROLE_CHOICES = (
